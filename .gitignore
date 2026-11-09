@@ -13,6 +13,9 @@ dist/
 logs/
 *.namecraft.json
 
+# 本机冒烟与截图证据
+.smoke/
+
 # 编辑器与系统
 .idea/
 .vscode/

@@ -1,7 +1,10 @@
-"""命令行入口：首期只有只读预览（执行与撤销在 S3）。
+"""命令行入口：预览、执行与撤销。
 
 用法：
     namecraft preview <目录> --rules rules.json [--json]
+    namecraft execute <目录> --rules rules.json [--mode block|suffix|overwrite] [--confirm <路径>]
+    namecraft journals [--json]
+    namecraft undo <日志id>
 
 规则文件为 JSON 数组：`[{"type": "insert", "params": {...}, "enabled": true}]`，
 类型键见 rules.REGISTRY（12 种）。预览按栈序计算新名并做四项校验；
@@ -14,14 +17,11 @@ import argparse
 import json
 import sys
 
-from namecraft.engine.chain import apply_chain
-from namecraft.engine.conflicts import detect_cycles
 from namecraft.engine.models import PreviewRow, Rule
-from namecraft.engine.validate import validate
 from namecraft.fs import journal as journal_store
-from namecraft.fs import list_files, occupied_paths
 from namecraft.session.execute import ExecutionError, UndoError, execute, undo
 from namecraft.session.plan import MODES, PlanError, prepare
+from namecraft.session.preview import compute
 
 
 def load_rules(path: str) -> list[Rule]:
@@ -38,16 +38,6 @@ def load_rules(path: str) -> list[Rule]:
             raise TypeError(f"规则第 {i + 1} 项 params 必须是对象")
         rules.append(Rule(str(entry["type"]), dict(params), bool(entry.get("enabled", True))))
     return rules
-
-
-def build_rows(
-    directory: str, rules: list[Rule]
-) -> tuple[list[PreviewRow], list[list[str]], set[str]]:
-    items = list_files(directory)
-    names = apply_chain(items, rules)
-    occupied = occupied_paths(items)
-    rows = validate(items, names, occupied)
-    return rows, detect_cycles(items, names), occupied
 
 
 def _print_table(rows: list[PreviewRow]) -> None:
@@ -81,7 +71,7 @@ def _print_json(rows: list[PreviewRow], cycles: list[list[str]]) -> None:
 def cmd_preview(args: argparse.Namespace) -> int:
     try:
         rules = load_rules(args.rules)
-        rows, cycles, _ = build_rows(args.directory, rules)
+        rows, cycles, _ = compute(args.directory, rules)
     except (OSError, TypeError, ValueError) as e:
         print(f"错误：{e}", file=sys.stderr)
         return 2
@@ -103,7 +93,7 @@ def cmd_preview(args: argparse.Namespace) -> int:
 def cmd_execute(args: argparse.Namespace) -> int:
     try:
         rules = load_rules(args.rules)
-        rows, _, occupied = build_rows(args.directory, rules)
+        rows, _, occupied = compute(args.directory, rules)
         plan = prepare(rows, occupied, mode=args.mode, confirm=set(args.confirm or ()))
         if not plan.ops:
             print("没有需要改名的文件。")
@@ -155,6 +145,12 @@ def cmd_undo(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_gui(args: argparse.Namespace) -> int:
+    from namecraft.gui import run
+
+    return run()
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(prog="namecraft", description="文件批量重命名工具（干净室重写）")
     sub = parser.add_subparsers(dest="command", required=True)
@@ -185,6 +181,9 @@ def build_parser() -> argparse.ArgumentParser:
     u.add_argument("journal_id", help="日志 id（journals 命令可查）")
     u.add_argument("--json", action="store_true", help="输出 JSON")
     u.set_defaults(func=cmd_undo)
+
+    g = sub.add_parser("gui", help="打开图形界面")
+    g.set_defaults(func=cmd_gui)
     return parser
 
 

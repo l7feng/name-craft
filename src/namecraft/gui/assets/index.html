@@ -1,0 +1,1304 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>namecraft</title>
+<style>
+  :root {
+    --bg: #0f1115;
+    --bg-soft: #141821;
+    --panel: #191e27;
+    --panel-2: #1e2430;
+    --line: #2a3240;
+    --line-soft: #232a36;
+    --text: #e7ebf2;
+    --muted: #8d97a8;
+    --muted-2: #6b7688;
+    --accent: #5aa0ff;
+    --accent-soft: rgba(90, 160, 255, .14);
+    --ok: #45c98a;
+    --err: #ff7070;
+    --warn: #e8b24a;
+    --radius: 10px;
+    --mono: "Cascadia Mono", "Consolas", "SFMono-Regular", "Microsoft YaHei UI", monospace;
+    --sans: "Segoe UI", "Microsoft YaHei UI", "PingFang SC", system-ui, sans-serif;
+  }
+  * { box-sizing: border-box; }
+  .hidden { display: none !important; }
+  html, body { height: 100%; }
+  body {
+    margin: 0;
+    background: radial-gradient(1200px 500px at 15% -20%, #1b2534 0%, var(--bg) 55%) fixed;
+    color: var(--text);
+    font: 13px/1.55 var(--sans);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    user-select: none;
+  }
+  input, textarea, select, button { font: inherit; color: inherit; }
+  ::selection { background: rgba(90, 160, 255, .35); }
+  ::-webkit-scrollbar { width: 10px; height: 10px; }
+  ::-webkit-scrollbar-thumb { background: #2c3542; border-radius: 6px; border: 2px solid transparent; background-clip: content-box; }
+  ::-webkit-scrollbar-thumb:hover { background: #3a4556; background-clip: content-box; }
+  ::-webkit-scrollbar-track { background: transparent; }
+
+  /* ---------- 顶栏 ---------- */
+  .topbar {
+    display: flex;
+    align-items: center;
+    gap: 18px;
+    padding: 12px 18px;
+    border-bottom: 1px solid var(--line-soft);
+    background: linear-gradient(180deg, rgba(30, 38, 51, .85), rgba(20, 24, 33, .75));
+  }
+  .brand { display: flex; align-items: center; gap: 10px; min-width: 180px; }
+  .logo {
+    width: 34px; height: 34px; border-radius: 9px;
+    display: grid; place-items: center;
+    background: linear-gradient(140deg, #6cb0ff, #2f6fd0);
+    color: #0b1220; font-weight: 800; font-size: 13px; letter-spacing: .5px;
+    box-shadow: 0 6px 18px rgba(60, 120, 220, .35);
+  }
+  .brand h1 { margin: 0; font-size: 15px; font-weight: 650; letter-spacing: .3px; }
+  .brand p { margin: 0; font-size: 11px; color: var(--muted-2); }
+  .folderbar { display: flex; gap: 8px; flex: 1; max-width: 720px; }
+  .folderbar input {
+    flex: 1; min-width: 0;
+    background: #10141b;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    padding: 8px 11px;
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--text);
+    outline: none;
+    transition: border-color .15s, box-shadow .15s;
+  }
+  .folderbar input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
+  .folderbar input::placeholder { color: var(--muted-2); }
+  .version { margin-left: auto; color: var(--muted-2); font-size: 11px; font-family: var(--mono); }
+
+  /* ---------- 按钮 ---------- */
+  .btn {
+    display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+    border: 1px solid var(--line);
+    background: var(--panel-2);
+    color: var(--text);
+    border-radius: 8px;
+    padding: 7px 13px;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: background .15s, border-color .15s, transform .06s;
+  }
+  .btn:hover { background: #26303d; border-color: #38455a; }
+  .btn:active { transform: translateY(1px); }
+  .btn:disabled { opacity: .45; cursor: default; transform: none; }
+  .btn.small { padding: 4px 9px; font-size: 12px; border-radius: 7px; }
+  .btn.ghost { background: transparent; }
+  .btn.primary {
+    background: linear-gradient(160deg, #5ea6ff, #2f74d8);
+    border-color: #4c92ec;
+    color: #071120;
+    font-weight: 650;
+    box-shadow: 0 4px 16px rgba(60, 120, 220, .28);
+  }
+  .btn.primary:hover { background: linear-gradient(160deg, #74b4ff, #3b82e8); }
+  .btn.danger { border-color: #6b2b2b; background: #2a1a1c; color: #ffb3b3; }
+  .btn.danger:hover { background: #3a2124; }
+
+  /* ---------- 主体 ---------- */
+  main {
+    flex: 1;
+    display: grid;
+    grid-template-columns: 400px minmax(0, 1fr);
+    gap: 14px;
+    padding: 14px 18px 16px;
+    min-height: 0;
+  }
+  section { min-height: 0; display: flex; flex-direction: column; }
+  .panel {
+    background: rgba(25, 30, 39, .82);
+    border: 1px solid var(--line-soft);
+    border-radius: var(--radius);
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+  .section-head {
+    display: flex; align-items: center; gap: 10px;
+    padding: 11px 13px;
+    border-bottom: 1px solid var(--line-soft);
+  }
+  .section-head h2 { margin: 0; font-size: 12px; font-weight: 650; letter-spacing: .6px; color: var(--muted); text-transform: uppercase; }
+  .section-head .count { color: var(--muted-2); font-size: 11px; }
+  .section-head .spacer { flex: 1; }
+
+  /* ---------- 规则栈 ---------- */
+  .rule-list { padding: 10px; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; flex: 1; }
+  .rule {
+    border: 1px solid var(--line-soft);
+    border-radius: 9px;
+    background: #161b24;
+    transition: border-color .15s, background .15s;
+  }
+  .rule.off { opacity: .55; }
+  .rule.open { border-color: #33465f; background: #171d27; }
+  .rule-head {
+    display: flex; align-items: center; gap: 9px;
+    padding: 9px 10px;
+    cursor: pointer;
+  }
+  .rule-no {
+    flex: none;
+    width: 20px; height: 20px; border-radius: 6px;
+    display: grid; place-items: center;
+    background: #212a37; color: var(--muted);
+    font-size: 11px; font-family: var(--mono);
+  }
+  .rule-title { font-weight: 600; font-size: 12.5px; }
+  .rule-summary {
+    color: var(--muted-2); font-size: 11.5px;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    flex: 1; min-width: 0;
+  }
+  .rule-actions { display: flex; gap: 2px; flex: none; }
+  .icon-btn {
+    width: 24px; height: 24px; border-radius: 6px;
+    border: 0; background: transparent; color: var(--muted);
+    cursor: pointer; display: grid; place-items: center; font-size: 12px;
+  }
+  .icon-btn:hover { background: #232c39; color: var(--text); }
+  .icon-btn:disabled { opacity: .3; cursor: default; }
+  .icon-btn.del:hover { background: #3a2124; color: #ff9c9c; }
+  .switch { position: relative; width: 28px; height: 16px; flex: none; }
+  .switch input { position: absolute; opacity: 0; pointer-events: none; }
+  .switch span {
+    position: absolute; inset: 0; border-radius: 999px;
+    background: #2b3441; cursor: pointer; transition: background .15s;
+  }
+  .switch span::after {
+    content: ""; position: absolute; top: 2px; left: 2px;
+    width: 12px; height: 12px; border-radius: 50%;
+    background: #8d97a8; transition: transform .15s, background .15s;
+  }
+  .switch input:checked + span { background: rgba(90, 160, 255, .35); }
+  .switch input:checked + span::after { transform: translateX(12px); background: var(--accent); }
+  .rule-body {
+    display: none;
+    padding: 2px 11px 12px;
+    border-top: 1px dashed var(--line-soft);
+    margin: 0 10px;
+  }
+  .rule.open .rule-body { display: block; }
+  .field { margin-top: 9px; }
+  .field.hidden { display: none; }
+  .field > label, .field > .flabel {
+    display: block; font-size: 11px; color: var(--muted); margin-bottom: 4px;
+  }
+  .field input[type=text], .field input[type=number], .field textarea, .field select {
+    width: 100%;
+    background: #10141b;
+    border: 1px solid var(--line);
+    border-radius: 7px;
+    padding: 6px 9px;
+    font-size: 12px;
+    color: var(--text);
+    outline: none;
+    transition: border-color .15s, box-shadow .15s;
+  }
+  .field input[type=number] { font-family: var(--mono); }
+  .field textarea { resize: vertical; min-height: 30px; font-family: var(--mono); line-height: 1.5; }
+  .field input:focus, .field textarea:focus, .field select:focus {
+    border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft);
+  }
+  .field .hint { margin-top: 3px; font-size: 10.5px; color: var(--muted-2); }
+  .checkrow { display: flex; align-items: center; gap: 7px; font-size: 12px; color: var(--text); cursor: pointer; }
+  .checkrow input { accent-color: var(--accent); width: 14px; height: 14px; }
+  .field.inline { display: flex; flex-direction: column; }
+
+  .empty {
+    color: var(--muted-2);
+    text-align: center;
+    padding: 34px 18px;
+    font-size: 12px;
+    line-height: 1.8;
+  }
+
+  /* ---------- 工作区 ---------- */
+  .workspace { gap: 0; }
+  .tabs {
+    display: flex; align-items: center; gap: 4px;
+    padding: 7px 10px 0;
+    border-bottom: 1px solid var(--line-soft);
+  }
+  .tab {
+    border: 0; background: transparent; color: var(--muted);
+    padding: 8px 14px 9px; cursor: pointer; font-size: 12.5px;
+    border-bottom: 2px solid transparent;
+  }
+  .tab:hover { color: var(--text); }
+  .tab.active { color: var(--text); border-bottom-color: var(--accent); }
+  .spacer { flex: 1; }
+  .summary { color: var(--muted); font-size: 11.5px; padding: 0 6px 6px 0; font-variant-numeric: tabular-nums; }
+  .summary b { color: var(--text); font-weight: 600; }
+  .summary .bad { color: var(--err); }
+  .pane { flex: 1; min-height: 0; display: flex; flex-direction: column; }
+  .pane.hidden { display: none; }
+  .table-wrap { flex: 1; overflow: auto; }
+  table { width: 100%; border-collapse: collapse; }
+  thead th {
+    position: sticky; top: 0; z-index: 1;
+    text-align: left; font-size: 10.5px; font-weight: 600; letter-spacing: .5px;
+    color: var(--muted-2); text-transform: uppercase;
+    background: #161b24;
+    padding: 8px 12px;
+    border-bottom: 1px solid var(--line-soft);
+  }
+  tbody td {
+    padding: 7px 12px;
+    border-bottom: 1px solid #1d232d;
+    font-size: 12px;
+    vertical-align: top;
+  }
+  tbody tr:hover { background: rgba(90, 160, 255, .04); }
+  td.names { font-family: var(--mono); font-size: 12px; word-break: break-all; }
+  td.names.old { color: var(--muted); }
+  td.names.new { color: var(--text); }
+  tr.changed td.names.new { color: #8fc2ff; }
+  tr.error { background: rgba(255, 112, 112, .05); }
+  tr.error td.names.new { color: #ffb0b0; }
+  td.arrow { color: var(--muted-2); width: 22px; text-align: center; padding-left: 0; padding-right: 0; }
+  .badge {
+    display: inline-block; padding: 1px 7px; border-radius: 999px;
+    font-size: 10.5px; letter-spacing: .3px; border: 1px solid transparent;
+  }
+  .badge.ok { color: var(--ok); background: rgba(69, 201, 138, .1); }
+  .badge.err { color: var(--err); background: rgba(255, 112, 112, .1); }
+  .badge.skip { color: var(--muted-2); background: rgba(141, 151, 168, .1); }
+  .badge.done { color: var(--ok); background: rgba(69, 201, 138, .1); }
+  .badge.running { color: var(--warn); background: rgba(232, 178, 74, .1); }
+  .badge.failed { color: var(--err); background: rgba(255, 112, 112, .1); }
+  .badge.partial { color: var(--warn); background: rgba(232, 178, 74, .1); }
+  .badge.undone { color: var(--muted); background: rgba(141, 151, 168, .12); }
+  .reason { color: #ff9f9f; font-size: 11px; margin-top: 2px; }
+  .muted { color: var(--muted); }
+  .dim { color: var(--muted-2); }
+
+  .actionbar {
+    display: flex; align-items: center; gap: 12px;
+    padding: 10px 12px;
+    border-top: 1px solid var(--line-soft);
+    background: rgba(22, 27, 36, .7);
+    border-radius: 0 0 var(--radius) var(--radius);
+  }
+  .modes { display: flex; background: #121721; border: 1px solid var(--line); border-radius: 8px; padding: 2px; gap: 2px; }
+  .mode {
+    border: 0; background: transparent; color: var(--muted);
+    padding: 5px 11px; border-radius: 6px; cursor: pointer; font-size: 12px; white-space: nowrap;
+  }
+  .mode:hover { color: var(--text); }
+  .mode.active { background: #253143; color: var(--text); box-shadow: inset 0 0 0 1px #34455c; }
+  .mode.active[data-mode=overwrite] { background: #3a2a1c; color: #f0c07a; box-shadow: inset 0 0 0 1px #5c4427; }
+  .mode-desc { color: var(--muted-2); font-size: 11.5px; flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+  /* ---------- 日志 ---------- */
+  .journal-list { padding: 12px; overflow-y: auto; display: flex; flex-direction: column; gap: 9px; }
+  .journal {
+    border: 1px solid var(--line-soft); border-radius: 9px;
+    background: #161b24; padding: 10px 12px;
+  }
+  .journal-head { display: flex; align-items: center; gap: 10px; }
+  .journal .jid { font-family: var(--mono); font-size: 12px; color: var(--text); }
+  .journal .meta { color: var(--muted-2); font-size: 11px; }
+  .journal details { margin-top: 7px; }
+  .journal summary { cursor: pointer; color: var(--muted); font-size: 11.5px; }
+  .entry { display: flex; gap: 8px; font-family: var(--mono); font-size: 11.5px; padding: 3px 0; color: var(--muted); }
+  .entry .anew { color: #8fc2ff; }
+  .entry .ov { color: var(--warn); }
+  .note { color: var(--warn); font-size: 11px; margin-top: 6px; }
+
+  /* ---------- 弹层 ---------- */
+  .overlay {
+    position: fixed; inset: 0; z-index: 50;
+    background: rgba(6, 9, 13, .66);
+    backdrop-filter: blur(3px);
+    display: grid; place-items: center;
+    padding: 24px;
+  }
+  .overlay.hidden { display: none; }
+  .modal {
+    width: min(720px, 100%);
+    max-height: 82vh;
+    display: flex; flex-direction: column;
+    background: #171c26;
+    border: 1px solid #2e3847;
+    border-radius: 13px;
+    box-shadow: 0 24px 70px rgba(0, 0, 0, .55);
+    overflow: hidden;
+  }
+  .modal-head { padding: 15px 18px 6px; }
+  .modal-head h3 { margin: 0; font-size: 15px; font-weight: 650; }
+  .modal-head p { margin: 6px 0 0; color: var(--muted); font-size: 12px; }
+  .modal-body { padding: 6px 18px 14px; overflow-y: auto; }
+  .modal-actions {
+    display: flex; justify-content: flex-end; gap: 8px;
+    padding: 12px 18px; border-top: 1px solid var(--line-soft);
+    background: #141925;
+  }
+  .rule-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; padding-top: 8px; }
+  .rule-pick {
+    text-align: left; border: 1px solid var(--line-soft); background: #1a1f2a;
+    border-radius: 9px; padding: 10px 12px; cursor: pointer;
+    transition: border-color .15s, background .15s;
+  }
+  .rule-pick:hover { border-color: #3d5a7e; background: #1e2634; }
+  .rule-pick b { display: block; font-size: 12.5px; font-weight: 600; }
+  .rule-pick span { display: block; color: var(--muted-2); font-size: 10.5px; margin-top: 3px; line-height: 1.45; }
+  .overwrite-list { margin-top: 10px; border: 1px solid #4a2f2f; border-radius: 8px; background: #1d1618; padding: 10px 12px; }
+  .overwrite-list .wl-head { display: flex; align-items: center; gap: 10px; color: #ffb3b3; font-size: 12px; margin-bottom: 6px; }
+  .overwrite-list label { display: flex; gap: 8px; align-items: flex-start; font-family: var(--mono); font-size: 11.5px; padding: 3px 0; color: #f3c7c7; cursor: pointer; }
+  .overwrite-list input { margin-top: 2px; accent-color: #ff7070; }
+  .change-preview { margin-top: 10px; max-height: 220px; overflow-y: auto; border: 1px solid var(--line-soft); border-radius: 8px; }
+  .change-preview div { display: flex; gap: 8px; padding: 4px 10px; font-family: var(--mono); font-size: 11.5px; border-bottom: 1px solid #1d232d; }
+  .change-preview div:last-child { border-bottom: 0; }
+  .change-preview .o { color: var(--muted); flex: 1; word-break: break-all; }
+  .change-preview .n { color: #8fc2ff; flex: 1; word-break: break-all; }
+  .change-preview .ar { color: var(--muted-2); }
+
+  .toast {
+    position: fixed; left: 50%; bottom: 26px; transform: translateX(-50%) translateY(12px);
+    z-index: 80; opacity: 0; pointer-events: none;
+    background: #1d2532; border: 1px solid #34455c;
+    border-radius: 9px; padding: 10px 16px;
+    font-size: 12.5px; max-width: 70vw;
+    box-shadow: 0 14px 40px rgba(0, 0, 0, .45);
+    transition: opacity .2s, transform .2s;
+  }
+  .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+  .toast.ok { border-color: #2c5b45; }
+  .toast.err { border-color: #6b2b2b; }
+  .toast.warn { border-color: #5c4427; }
+
+  body.busy .btn, body.busy .mode { pointer-events: none; }
+  body.busy .workspace { opacity: .7; }
+
+  .bridge-warn {
+    position: fixed; top: 76px; left: 50%; transform: translateX(-50%);
+    background: #3a2a1c; border: 1px solid #5c4427; color: #f0c07a;
+    padding: 8px 14px; border-radius: 8px; font-size: 12px; z-index: 60;
+  }
+</style>
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">
+      <div class="logo">nc</div>
+      <div>
+        <h1>namecraft</h1>
+        <p>规则链式批量重命名</p>
+      </div>
+    </div>
+    <div class="folderbar">
+      <input id="folder" placeholder="选择要处理的文件夹…" spellcheck="false" autocomplete="off">
+      <button id="browse" class="btn">浏览…</button>
+    </div>
+    <div class="version" id="version"></div>
+  </header>
+
+  <main>
+    <section class="panel">
+      <div class="section-head">
+        <h2>规则栈</h2>
+        <span class="count" id="ruleCount"></span>
+        <div class="spacer"></div>
+        <button id="addRule" class="btn small">＋ 添加规则</button>
+      </div>
+      <div class="rule-list" id="ruleList"></div>
+      <div class="empty" id="rulesEmpty">
+        还没有规则。<br>点右上角「添加规则」，从上到下依次作用。
+      </div>
+    </section>
+
+    <section class="panel workspace">
+      <div class="tabs">
+        <button class="tab active" data-tab="preview">预览</button>
+        <button class="tab" data-tab="journals">改名日志</button>
+        <div class="spacer"></div>
+        <span class="summary" id="summary"></span>
+      </div>
+
+      <div class="pane" id="previewPane">
+        <div class="table-wrap">
+          <table id="previewTable">
+            <thead>
+              <tr>
+                <th style="width:64px">状态</th>
+                <th>原名称</th>
+                <th style="width:26px"></th>
+                <th>新名称</th>
+                <th style="width:200px">说明</th>
+              </tr>
+            </thead>
+            <tbody id="previewBody"></tbody>
+          </table>
+          <div class="empty" id="previewEmpty">
+            选择文件夹并添加规则后，这里显示改名预览。<br>预览只读，不会改动任何文件。
+          </div>
+        </div>
+        <div class="actionbar">
+          <div class="modes" id="modes"></div>
+          <div class="mode-desc" id="modeDesc"></div>
+          <button id="refresh" class="btn ghost">刷新预览</button>
+          <button id="execute" class="btn primary" disabled>执行改名</button>
+        </div>
+      </div>
+
+      <div class="pane hidden" id="journalsPane">
+        <div class="journal-list" id="journalList"></div>
+        <div class="empty" id="journalsEmpty">暂无改名日志。执行一次改名后会出现在这里。</div>
+      </div>
+    </section>
+  </main>
+
+  <!-- 规则选择 -->
+  <div class="overlay hidden" id="pickerOverlay">
+    <div class="modal">
+      <div class="modal-head">
+        <h3>添加规则</h3>
+        <p>规则按列表顺序依次作用，每一条都接收上一条的结果。</p>
+      </div>
+      <div class="modal-body">
+        <div class="rule-grid" id="ruleGrid"></div>
+      </div>
+      <div class="modal-actions">
+        <button class="btn" id="pickerCancel">取消</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 通用确认 -->
+  <div class="overlay hidden" id="confirmOverlay">
+    <div class="modal" style="width:min(560px,100%)">
+      <div class="modal-head">
+        <h3 id="confirmTitle">确认</h3>
+        <p id="confirmMessage"></p>
+      </div>
+      <div class="modal-body" id="confirmBody"></div>
+      <div class="modal-actions">
+        <button class="btn" id="confirmCancel">取消</button>
+        <button class="btn primary" id="confirmOk">确认</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+<script>
+"use strict";
+
+const state = {
+  api: null,
+  booted: false,
+  folder: "",
+  rules: [],
+  mode: "block",
+  meta: [],
+  modes: [],
+  preview: null,
+  compact: false,
+  open: new Set(),
+  seq: 1,
+  busy: false,
+  journalloaded: false,
+};
+
+const $ = (sel) => document.querySelector(sel);
+const el = (tag, cls, text) => {
+  const node = document.createElement(tag);
+  if (cls) node.className = cls;
+  if (text !== undefined) node.textContent = text;
+  return node;
+};
+
+/* ---------------- 桥接 ---------------- */
+
+function start() {
+  if (state.booted) return;
+  state.booted = true;
+  state.api = window.pywebview.api;
+  boot();
+}
+
+window.addEventListener("pywebviewready", start);
+if (window.pywebview && window.pywebview.api) start();
+
+setTimeout(() => {
+  if (!state.booted) {
+    const warn = el("div", "bridge-warn", "未检测到桌面桥接：预览与执行不可用。请用 namecraft gui 启动。");
+    document.body.appendChild(warn);
+  }
+}, 2500);
+
+async function call(name, ...args) {
+  if (!state.api) throw new Error("桌面桥接未就绪");
+  const fn = state.api[name];
+  if (!fn) throw new Error("桥接方法不存在：" + name);
+  return await fn(...args);
+}
+
+/* ---------------- 启动 ---------------- */
+
+async function boot() {
+  try {
+    const res = await call("bootstrap");
+    if (!res || !res.ok) throw new Error((res && res.error) || "初始化失败");
+    state.meta = res.rules || [];
+    state.modes = res.modes || [];
+    $("#version").textContent = "v" + res.version;
+    const saved = res.settings || {};
+    state.mode = saved.mode || "block";
+    state.folder = saved.folder || "";
+    $("#folder").value = state.folder;
+    state.rules = (saved.rules || [])
+      .filter((r) => state.meta.some((m) => m.type === r.type))
+      .map((r) => ({
+        id: state.seq++,
+        type: r.type,
+        enabled: r.enabled !== false,
+        params: { ...defaultsFor(r.type), ...(r.params || {}) },
+      }));
+    renderModes();
+    renderRules();
+    if (state.folder) preview();
+  } catch (err) {
+    toast("初始化失败：" + err.message, "err");
+  }
+}
+
+function defaultsFor(type) {
+  const meta = state.meta.find((m) => m.type === type);
+  const out = {};
+  if (meta) meta.fields.forEach((f) => { out[f.key] = f.default; });
+  return out;
+}
+
+function ruleMeta(type) {
+  return state.meta.find((m) => m.type === type) || { name: type, desc: "", fields: [] };
+}
+
+/* ---------------- 规则栈渲染 ---------------- */
+
+function renderRules() {
+  const list = $("#ruleList");
+  list.innerHTML = "";
+  $("#rulesEmpty").classList.toggle("hidden", state.rules.length > 0);
+  $("#ruleCount").textContent = state.rules.length ? state.rules.length + " 条" : "";
+
+  state.rules.forEach((rule, index) => {
+    const meta = ruleMeta(rule.type);
+    const card = el("div", "rule");
+    if (!rule.enabled) card.classList.add("off");
+    if (state.open.has(rule.id)) card.classList.add("open");
+
+    const head = el("div", "rule-head");
+    const sw = el("label", "switch");
+    const cb = el("input");
+    cb.type = "checkbox";
+    cb.checked = rule.enabled;
+    cb.addEventListener("click", (e) => e.stopPropagation());
+    cb.addEventListener("change", () => {
+      rule.enabled = cb.checked;
+      card.classList.toggle("off", !rule.enabled);
+      schedulePreview();
+    });
+    sw.appendChild(cb);
+    sw.appendChild(el("span"));
+    head.appendChild(sw);
+
+    head.appendChild(el("span", "rule-no", String(index + 1)));
+    head.appendChild(el("span", "rule-title", meta.name));
+    head.appendChild(el("span", "rule-summary", summarize(rule)));
+    head.addEventListener("click", () => {
+      if (state.open.has(rule.id)) state.open.delete(rule.id);
+      else state.open.add(rule.id);
+      card.classList.toggle("open");
+    });
+
+    const actions = el("div", "rule-actions");
+    const up = el("button", "icon-btn", "↑");
+    up.title = "上移";
+    up.disabled = index === 0;
+    up.addEventListener("click", (e) => { e.stopPropagation(); moveRule(index, -1); });
+    const down = el("button", "icon-btn", "↓");
+    down.title = "下移";
+    down.disabled = index === state.rules.length - 1;
+    down.addEventListener("click", (e) => { e.stopPropagation(); moveRule(index, 1); });
+    const del = el("button", "icon-btn del", "✕");
+    del.title = "删除规则";
+    del.addEventListener("click", (e) => { e.stopPropagation(); removeRule(rule.id); });
+    actions.append(up, down, del);
+    head.appendChild(actions);
+    card.appendChild(head);
+
+    const body = el("div", "rule-body");
+    meta.fields.forEach((field) => body.appendChild(fieldNode(rule, field)));
+    card.appendChild(body);
+    list.appendChild(card);
+  });
+}
+
+function fieldNode(rule, field) {
+  const wrap = el("div", "field");
+  if (field.when && !matchWhen(field.when, rule.params)) wrap.classList.add("hidden");
+
+  if (field.kind === "check") {
+    const row = el("label", "checkrow");
+    const input = el("input");
+    input.type = "checkbox";
+    input.checked = !!rule.params[field.key];
+    input.addEventListener("change", () => {
+      rule.params[field.key] = input.checked;
+      onRuleEdited(rule);
+    });
+    row.append(input, document.createTextNode(field.label));
+    wrap.appendChild(row);
+  } else {
+    const label = el("label", null, field.label);
+    label.htmlFor = "f" + rule.id + field.key;
+    wrap.appendChild(label);
+    let input;
+    if (field.kind === "select") {
+      input = el("select");
+      (field.options || []).forEach((opt) => {
+        const o = el("option", null, opt.label);
+        o.value = opt.value;
+        input.appendChild(o);
+      });
+      input.value = rule.params[field.key] ?? (field.options && field.options[0] && field.options[0].value);
+      input.addEventListener("change", () => {
+        rule.params[field.key] = input.value;
+        syncWhen(rule);
+        onRuleEdited(rule);
+      });
+    } else if (field.kind === "textarea") {
+      input = el("textarea");
+      input.value = rule.params[field.key] ?? "";
+      input.rows = field.key === "names" ? 4 : 2;
+      input.spellcheck = false;
+      input.addEventListener("input", () => {
+        rule.params[field.key] = input.value;
+        onRuleEdited(rule);
+      });
+    } else if (field.kind === "number") {
+      input = el("input");
+      input.type = "number";
+      if (field.min !== undefined) input.min = String(field.min);
+      input.value = rule.params[field.key] ?? field.default ?? 0;
+      input.addEventListener("input", () => {
+        const n = parseInt(input.value, 10);
+        rule.params[field.key] = Number.isNaN(n) ? (field.default ?? 0) : n;
+        onRuleEdited(rule);
+      });
+    } else {
+      input = el("input");
+      input.type = "text";
+      input.value = rule.params[field.key] ?? "";
+      input.spellcheck = false;
+      input.addEventListener("input", () => {
+        rule.params[field.key] = input.value;
+        onRuleEdited(rule);
+      });
+    }
+    input.id = "f" + rule.id + field.key;
+    wrap.appendChild(input);
+    if (field.hint) wrap.appendChild(el("div", "hint", field.hint));
+  }
+  return wrap;
+}
+
+function matchWhen(when, params) {
+  return Object.entries(when).every(([key, expected]) => {
+    const values = Array.isArray(expected) ? expected : [expected];
+    return values.includes(params[key]);
+  });
+}
+
+function syncWhen(rule) {
+  const meta = ruleMeta(rule.type);
+  const index = state.rules.findIndex((r) => r.id === rule.id);
+  if (index < 0) return;
+  const targetCard = document.querySelectorAll("#ruleList .rule")[index];
+  if (!targetCard) return;
+  const fields = targetCard.querySelectorAll(".rule-body > .field");
+  meta.fields.forEach((field, i) => {
+    if (!field.when) return;
+    const node = fields[i];
+    if (!node) return;
+    node.classList.toggle("hidden", !matchWhen(field.when, rule.params));
+  });
+}
+
+function onRuleEdited(rule) {
+  const index = state.rules.findIndex((r) => r.id === rule.id);
+  const card = document.querySelectorAll("#ruleList .rule")[index];
+  if (card) {
+    const summary = card.querySelector(".rule-summary");
+    if (summary) summary.textContent = summarize(rule);
+  }
+  schedulePreview();
+}
+
+function summarize(rule) {
+  const p = rule.params || {};
+  const short = (v, n = 14) => {
+    const s = String(v ?? "").replace(/\s+/g, " ").trim();
+    return s.length > n ? s.slice(0, n) + "…" : s;
+  };
+  const whereLabel = { prefix: "前缀", suffix: "后缀", position: "第 " + p.position + " 位", after: "锚文本后", before: "锚文本前", replace: "整名" };
+  switch (rule.type) {
+    case "insert": return `${whereLabel[p.where] || p.where}插入 “${short(p.what)}”`;
+    case "delete": return `${p.right_to_left ? "从右" : "从左"}删到${p.until_mode === "end" ? "末尾" : p.until_mode === "count" ? "第 " + p.until_value + " 字符" : "分隔符 “" + short(p.until_value) + "”"}`;
+    case "remove": return `移除 “${short(p.text)}” ${p.occurrences === "all" ? "全部" : p.occurrences === "first" ? "首处" : "末处"}`;
+    case "replace": return `“${short(String(p.find).split("*|*")[0])}” → “${short(String(p.replace).split("*|*")[0])}”`;
+    case "rearrange": return `按${p.split === "delimiters" ? "分隔符" : p.split === "positions" ? "位置" : "片段"}重排为 ${short(p.pattern)}`;
+    case "extension": return p.append ? `追加扩展名 “${short(p.new_ext)}”` : p.new_ext ? `扩展名改为 “${short(p.new_ext)}”` : "移除扩展名";
+    case "strip": {
+      const parts = [p.english && "英文", p.digits && "数字", p.symbols && "符号", p.brackets && "括号", p.custom && "自定义"].filter(Boolean);
+      return parts.length ? `剥离 ${parts.join("、")}` : "（未勾选字符）";
+    }
+    case "case": {
+      const label = { none: "不变", capitalize: "词首大写", capitalize_preserve: "首字母大写", lower: "全小写", upper: "全大写", invert: "反转", sentence: "句首大写" };
+      return `${label[p.mode] || p.mode}${p.fragments ? "，强制 " + short(p.fragments) : ""}`;
+    }
+    case "serialize": return `${p.system === "letters" ? "字母" : "十进制"}序号，起始 ${p.start}${p.pad ? "，补零 " + p.pad : ""}，${whereLabel[p.where] || p.where}`;
+    case "cleanup": {
+      const parts = [p.brackets && "删括号", p.chars_to_spaces && "字符转空格", p.normalize_space && "统一空白", p.split_camel && "驼峰拆分", p.fix_spaces && "修空格"].filter(Boolean);
+      return parts.length ? `清理：${parts.join("、")}` : "（未勾选清理项）";
+    }
+    case "regex": return `/${short(p.expression, 18)}/ → “${short(p.replacement)}”`;
+    case "userinput": return `${String(p.names || "").split("\n").filter(Boolean).length || 0} 个指定名称`;
+    default: return "";
+  }
+}
+
+function moveRule(index, delta) {
+  const to = index + delta;
+  if (to < 0 || to >= state.rules.length) return;
+  const [rule] = state.rules.splice(index, 1);
+  state.rules.splice(to, 0, rule);
+  renderRules();
+  schedulePreview();
+}
+
+function removeRule(id) {
+  state.rules = state.rules.filter((r) => r.id !== id);
+  state.open.delete(id);
+  renderRules();
+  schedulePreview();
+}
+
+/* ---------------- 规则选择器 ---------------- */
+
+function openPicker() {
+  const grid = $("#ruleGrid");
+  grid.innerHTML = "";
+  state.meta.forEach((meta) => {
+    const btn = el("button", "rule-pick");
+    btn.appendChild(el("b", null, meta.name));
+    btn.appendChild(el("span", null, meta.desc));
+    btn.addEventListener("click", () => {
+      const rule = {
+        id: state.seq++,
+        type: meta.type,
+        enabled: true,
+        params: defaultsFor(meta.type),
+      };
+      state.rules.push(rule);
+      state.open.add(rule.id);
+      $("#pickerOverlay").classList.add("hidden");
+      renderRules();
+      schedulePreview();
+      const cards = document.querySelectorAll("#ruleList .rule");
+      const last = cards[cards.length - 1];
+      if (last) last.scrollIntoView({ block: "nearest", behavior: "smooth" });
+    });
+    grid.appendChild(btn);
+  });
+  $("#pickerOverlay").classList.remove("hidden");
+}
+
+/* ---------------- 模式 ---------------- */
+
+function renderModes() {
+  const box = $("#modes");
+  box.innerHTML = "";
+  const modes = state.modes.length ? state.modes : [
+    { value: "block", label: "拦截", desc: "有冲突就拒绝" },
+    { value: "suffix", label: "加后缀", desc: "自动加 (2)" },
+    { value: "overwrite", label: "确认覆盖", desc: "逐项确认替换" },
+  ];
+  modes.forEach((m) => {
+    const btn = el("button", "mode", m.label);
+    btn.dataset.mode = m.value;
+    btn.title = m.desc || "";
+    if (m.value === state.mode) btn.classList.add("active");
+    btn.addEventListener("click", () => {
+      state.mode = m.value;
+      renderModes();
+      const meta = modes.find((x) => x.value === state.mode);
+      $("#modeDesc").textContent = meta ? meta.desc : "";
+      schedulePreview();
+    });
+    box.appendChild(btn);
+  });
+  const current = modes.find((x) => x.value === state.mode) || modes[0];
+  $("#modeDesc").textContent = current ? current.desc : "";
+}
+
+/* ---------------- 预览 ---------------- */
+
+let previewTimer = null;
+function schedulePreview() {
+  if (previewTimer) clearTimeout(previewTimer);
+  previewTimer = setTimeout(() => { previewTimer = null; preview(); }, 320);
+  scheduleSave();
+}
+
+let saveTimer = null;
+function scheduleSave() {
+  if (saveTimer) clearTimeout(saveTimer);
+  saveTimer = setTimeout(() => { saveTimer = null; saveSettings(); }, 700);
+}
+
+function saveSettings() {
+  if (!state.api) return;
+  call("save_settings", {
+    folder: state.folder,
+    rules: serializeRules(),
+    mode: state.mode,
+    lastFolders: state.folder ? { target: state.folder } : {},
+  }).catch(() => {});
+}
+
+function serializeRules() {
+  return state.rules.map((r) => ({ type: r.type, enabled: r.enabled, params: r.params }));
+}
+
+async function preview() {
+  const folder = ($("#folder").value || "").trim();
+  state.folder = folder;
+  if (!folder) {
+    state.preview = null;
+    renderPreview();
+    return;
+  }
+  setBusy(true);
+  try {
+    const res = await call("preview", { folder, rules: serializeRules(), mode: state.mode });
+    if (!res.ok) {
+      state.preview = null;
+      renderPreview(res.error);
+      return;
+    }
+    state.preview = res;
+    renderPreview();
+  } catch (err) {
+    state.preview = null;
+    renderPreview("预览失败：" + err.message);
+  } finally {
+    setBusy(false);
+  }
+}
+
+function renderPreview(error) {
+  const body = $("#previewBody");
+  body.innerHTML = "";
+  const data = state.preview;
+  const empty = $("#previewEmpty");
+  const summary = $("#summary");
+  if (!data) {
+    empty.classList.remove("hidden");
+    empty.innerHTML = error ? escapeHtml(error) : "选择文件夹并添加规则后，这里显示改名预览。<br>预览只读，不会改动任何文件。";
+    summary.textContent = "";
+    $("#execute").disabled = true;
+    return;
+  }
+  const rows = data.rows || [];
+  if (!rows.length) {
+    empty.classList.remove("hidden");
+    empty.innerHTML = "该文件夹内没有文件（不递归子目录）。";
+    summary.textContent = "";
+    $("#execute").disabled = true;
+    return;
+  }
+  empty.classList.add("hidden");
+  const frag = document.createDocumentFragment();
+  rows.forEach((row) => {
+    const tr = el("tr");
+    if (row.changed) tr.classList.add("changed");
+    if (row.status === "error") tr.classList.add("error");
+
+    const status = el("td");
+    const badge = el("span", "badge " + (row.status === "error" ? "err" : row.status === "skipped" ? "skip" : "ok"),
+      row.status === "error" ? "错误" : row.status === "skipped" ? "跳过" : row.changed ? "改名" : "不变");
+    status.appendChild(badge);
+    tr.appendChild(status);
+
+    tr.appendChild(el("td", "names old", row.old));
+    tr.appendChild(el("td", "arrow", row.changed ? "→" : ""));
+    const newCell = el("td", "names new", row.new);
+    tr.appendChild(newCell);
+
+    const note = el("td");
+    if (row.reasons && row.reasons.length) {
+      row.reasons.forEach((reason) => note.appendChild(el("div", "reason", reason)));
+    } else if (!row.changed) {
+      note.appendChild(el("span", "dim", "—"));
+    }
+    tr.appendChild(note);
+    frag.appendChild(tr);
+  });
+  body.appendChild(frag);
+
+  const s = data.summary || { total: rows.length, changed: 0, errors: 0 };
+  summary.innerHTML = `共 <b>${s.total}</b> 项 · 将改名 <b>${s.changed}</b> 项` +
+    (s.errors ? ` · <span class="bad">${s.errors} 项错误</span>` : "") +
+    (data.cycles ? ` · ${data.cycles} 组循环` : "");
+  $("#execute").disabled = s.changed === 0;
+}
+
+/* ---------------- 执行 ---------------- */
+
+async function executeFlow() {
+  const data = state.preview;
+  if (!data || !data.rows) return;
+  const changed = data.rows.filter((r) => r.changed);
+  if (!changed.length) return;
+
+  let selected = [];
+  if (state.mode === "overwrite") {
+    const conflicts = data.rows.filter((r) => (r.reasons || []).some((x) => x.includes("目标已被现有文件占用")));
+    if (conflicts.length) {
+      const picked = await askOverwrite(conflicts);
+      if (!picked) return;
+      selected = picked;
+    }
+  }
+
+  const modeText = { block: "拦截（冲突即拒绝）", suffix: "自动加 (n) 后缀", overwrite: "确认覆盖" }[state.mode] || state.mode;
+  const ok = await askConfirm({
+    title: "执行改名",
+    message: `将对 ${changed.length} 项文件执行改名，冲突口径：${modeText}。建议先复核预览。`,
+    html: changeList(changed.slice(0, 200), changed.length),
+    okLabel: state.mode === "overwrite" ? "确认覆盖并改名" : "确认改名",
+    danger: state.mode === "overwrite",
+  });
+  if (!ok) return;
+
+  setBusy(true);
+  try {
+    const res = await call("execute", {
+      folder: state.folder,
+      rules: serializeRules(),
+      mode: state.mode,
+      confirm: selected,
+    });
+    if (!res.ok) {
+      if (res.kind === "overwrite" && res.needConfirm) {
+        const picked = await askOverwrite(
+          res.needConfirm.map((p) => ({ path: p, name: p.split(/[\\/]/).pop() })),
+          "执行前又发现新的占用目标，需要补充确认。"
+        );
+        if (picked) {
+          const retry = await call("execute", {
+            folder: state.folder,
+            rules: serializeRules(),
+            mode: state.mode,
+            confirm: [...selected, ...picked],
+          });
+          afterExecute(retry);
+          return;
+        }
+        return;
+      }
+      toast(res.error || "执行失败", "err");
+      return;
+    }
+    afterExecute(res);
+  } catch (err) {
+    toast("执行失败：" + err.message, "err");
+  } finally {
+    setBusy(false);
+  }
+}
+
+function afterExecute(res) {
+  if (!res || !res.ok) {
+    toast((res && res.error) || "执行失败", "err");
+    return;
+  }
+  if (!res.journal) {
+    toast(res.message || "没有需要改名的文件。", "warn");
+    return;
+  }
+  const notes = (res.notes || []).filter(Boolean);
+  toast(`已改名 ${res.count} 项。日志 ${res.journal.id}，可在「改名日志」中撤销。`, notes.length ? "warn" : "ok");
+  if (notes.length) notes.forEach((n) => console.info("[namecraft]", n));
+  state.journalloaded = false;
+  preview();
+  loadJournals();
+}
+
+/* ---------------- 日志与撤销 ---------------- */
+
+async function loadJournals() {
+  if (!state.api) return;
+  try {
+    const res = await call("journals");
+    if (!res.ok) { toast(res.error || "读取日志失败", "err"); return; }
+    renderJournals(res.journals || []);
+    state.journalloaded = true;
+  } catch (err) {
+    toast("读取日志失败：" + err.message, "err");
+  }
+}
+
+function renderJournals(items) {
+  const box = $("#journalList");
+  box.innerHTML = "";
+  $("#journalsEmpty").classList.toggle("hidden", items.length > 0);
+  const statusLabel = { running: "执行中", done: "已完成", failed: "失败", partial: "部分完成", undone: "已撤销" };
+  items.forEach((j) => {
+    const card = el("div", "journal");
+    const head = el("div", "journal-head");
+    head.appendChild(el("span", "jid", j.id));
+    head.appendChild(el("span", "badge " + (j.status || "done"), statusLabel[j.status] || j.status));
+    head.appendChild(el("span", "meta", `${j.created || ""} · ${(j.entries || []).length} 项`));
+    head.appendChild(el("div", "spacer"));
+    if (j.undoable) {
+      const btn = el("button", "btn small", "撤销");
+      btn.title = "只允许撤销最近一次完成的改名";
+      btn.addEventListener("click", () => undoFlow(j));
+      head.appendChild(btn);
+    }
+    card.appendChild(head);
+
+    const details = el("details");
+    const summary = el("summary", null, `查看 ${(j.entries || []).length} 条改名记录`);
+    details.appendChild(summary);
+    (j.entries || []).forEach((e) => {
+      const row = el("div", "entry");
+      row.appendChild(el("span", "o", baseName(e.old)));
+      row.appendChild(el("span", null, "→"));
+      row.appendChild(el("span", "anew", baseName(e.new)));
+      if (e.overwrite) row.appendChild(el("span", "ov", "覆盖"));
+      details.appendChild(row);
+    });
+    card.appendChild(details);
+    (j.notes || []).filter(Boolean).forEach((n) => card.appendChild(el("div", "note", n)));
+    box.appendChild(card);
+  });
+}
+
+async function undoFlow(journal) {
+  const ok = await askConfirm({
+    title: "撤销改名",
+    message: `将把 ${(journal.entries || []).length} 项文件恢复为改名前的名称。`,
+    html: changeList((journal.entries || []).map((e) => ({ old: baseName(e.new), new: baseName(e.old) })), 999, true),
+    okLabel: "确认撤销",
+    danger: true,
+  });
+  if (!ok) return;
+  setBusy(true);
+  try {
+    const res = await call("undo", journal.id);
+    if (!res.ok) { toast(res.error || "撤销失败", "err"); return; }
+    toast(`已撤销 ${res.count} 项改名。`, "ok");
+    loadJournals();
+    preview();
+  } catch (err) {
+    toast("撤销失败：" + err.message, "err");
+  } finally {
+    setBusy(false);
+  }
+}
+
+/* ---------------- 确认弹层 ---------------- */
+
+let confirmResolve = null;
+
+function askConfirm({ title, message, html, okLabel, danger }) {
+  return new Promise((resolve) => {
+    confirmResolve = resolve;
+    $("#confirmTitle").textContent = title || "确认";
+    $("#confirmMessage").textContent = message || "";
+    const body = $("#confirmBody");
+    body.innerHTML = "";
+    if (html) body.innerHTML = html;
+    const ok = $("#confirmOk");
+    ok.textContent = okLabel || "确认";
+    ok.className = "btn " + (danger ? "danger" : "primary");
+    ok.disabled = false;
+    $("#confirmOverlay").classList.remove("hidden");
+    ok.focus();
+  });
+}
+
+function closeConfirm(answer) {
+  $("#confirmOverlay").classList.add("hidden");
+  const resolve = confirmResolve;
+  confirmResolve = null;
+  if (resolve) resolve(answer);
+}
+
+function askOverwrite(conflicts, extraMessage) {
+  return new Promise((resolve) => {
+    confirmResolve = resolve;
+    $("#confirmTitle").textContent = "确认覆盖";
+    $("#confirmMessage").textContent = extraMessage ||
+      "以下目标文件已存在，改名会永久替换它们的内容（不可恢复）。请逐项勾选确认。";
+    const body = $("#confirmBody");
+    body.innerHTML = "";
+    const box = el("div", "overwrite-list");
+    const head = el("div", "wl-head");
+    const all = el("button", "btn small", "全部勾选");
+    head.appendChild(el("span", null, "待覆盖目标"));
+    head.appendChild(el("div", "spacer"));
+    head.appendChild(all);
+    box.appendChild(head);
+    const checks = [];
+    conflicts.forEach((c) => {
+      const label = el("label");
+      const cb = el("input");
+      cb.type = "checkbox";
+      cb.value = c.path || c.name;
+      checks.push(cb);
+      label.append(cb, document.createTextNode(c.name || c.path));
+      box.appendChild(label);
+    });
+    body.appendChild(box);
+    all.addEventListener("click", () => {
+      const anyUnchecked = checks.some((c) => !c.checked);
+      checks.forEach((c) => { c.checked = anyUnchecked; });
+      syncOk();
+    });
+    const ok = $("#confirmOk");
+    ok.textContent = "确认覆盖";
+    ok.className = "btn danger";
+    const syncOk = () => { ok.disabled = !checks.every((c) => c.checked); };
+    checks.forEach((c) => c.addEventListener("change", syncOk));
+    syncOk();
+    $("#confirmOverlay").classList.remove("hidden");
+  });
+}
+
+$("#confirmCancel").addEventListener("click", () => closeConfirm(false));
+$("#confirmOk").addEventListener("click", () => {
+  const box = $("#confirmBody");
+  if (box.querySelector(".overwrite-list")) {
+    const picked = Array.from(box.querySelectorAll("input[type=checkbox]"))
+      .filter((c) => c.checked)
+      .map((c) => c.value);
+    closeConfirm(picked);
+    return;
+  }
+  closeConfirm(true);
+});
+$("#confirmOverlay").addEventListener("click", (e) => {
+  if (e.target === $("#confirmOverlay")) closeConfirm(false);
+});
+
+document.addEventListener("keydown", (e) => {
+  if (e.key === "Escape") {
+    if (!$("#pickerOverlay").classList.contains("hidden")) $("#pickerOverlay").classList.add("hidden");
+    if (!$("#confirmOverlay").classList.contains("hidden")) closeConfirm(false);
+  }
+  if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) {
+    if (!$("#execute").disabled) executeFlow();
+  }
+});
+
+function changeList(items, total) {
+  const rows = items.map((it) => {
+    const o = escapeHtml(it.old || baseName(it.path) || "");
+    const n = escapeHtml(it.new || "");
+    return `<div><span class="o">${o}</span><span class="ar">→</span><span class="n">${n}</span></div>`;
+  }).join("");
+  const more = total > items.length ? `<div><span class="dim">…… 另有 ${total - items.length} 项</span></div>` : "";
+  return `<div class="change-preview">${rows}${more}</div>`;
+}
+
+/* ---------------- 杂项 ---------------- */
+
+function baseName(path) {
+  const s = String(path || "");
+  const i = Math.max(s.lastIndexOf("\\"), s.lastIndexOf("/"));
+  return i >= 0 ? s.slice(i + 1) : s;
+}
+
+function escapeHtml(text) {
+  return String(text ?? "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
+}
+
+let toastTimer = null;
+function toast(message, kind) {
+  const node = $("#toast");
+  node.textContent = message;
+  node.className = "toast show " + (kind || "");
+  if (toastTimer) clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => { node.className = "toast " + (kind || ""); }, 4200);
+}
+
+function setBusy(flag) {
+  state.busy = flag;
+  document.body.classList.toggle("busy", flag);
+}
+
+/* ---------------- 事件绑定 ---------------- */
+
+$("#browse").addEventListener("click", async () => {
+  try {
+    const res = await call("pick_folder", $("#folder").value.trim(), "target");
+    if (!res.ok) { toast(res.error || "无法打开选择器", "err"); return; }
+    if (!res.path) return;
+    state.folder = res.path;
+    $("#folder").value = res.path;
+    preview();
+  } catch (err) {
+    toast("无法打开选择器：" + err.message, "err");
+  }
+});
+
+$("#folder").addEventListener("keydown", (e) => {
+  if (e.key === "Enter") preview();
+});
+$("#folder").addEventListener("change", () => preview());
+
+$("#addRule").addEventListener("click", openPicker);
+$("#pickerCancel").addEventListener("click", () => $("#pickerOverlay").classList.add("hidden"));
+$("#pickerOverlay").addEventListener("click", (e) => {
+  if (e.target === $("#pickerOverlay")) $("#pickerOverlay").classList.add("hidden");
+});
+
+$("#refresh").addEventListener("click", preview);
+$("#execute").addEventListener("click", executeFlow);
+
+document.querySelectorAll(".tab").forEach((tab) => {
+  tab.addEventListener("click", () => {
+    document.querySelectorAll(".tab").forEach((t) => t.classList.toggle("active", t === tab));
+    const name = tab.dataset.tab;
+    $("#previewPane").classList.toggle("hidden", name !== "preview");
+    $("#journalsPane").classList.toggle("hidden", name !== "journals");
+    if (name === "journals") loadJournals();
+  });
+});
+</script>
+</body>
+</html>
