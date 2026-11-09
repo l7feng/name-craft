@@ -247,6 +247,39 @@
   .summary .bad { color: var(--err); }
   .pane { flex: 1; min-height: 0; display: flex; flex-direction: column; }
   .pane.hidden { display: none; }
+  .dropzone {
+    margin: 10px 12px 0;
+    padding: 12px 14px;
+    border: 1px dashed #3a475a;
+    border-radius: 10px;
+    background: #141a23;
+    transition: border-color .15s, background .15s;
+  }
+  .dropzone.drag { border-color: var(--accent); background: rgba(90, 160, 255, .08); }
+  .dropzone.has-files { padding: 9px 12px 10px; }
+  .dz-empty { text-align: center; padding: 7px 0 5px; }
+  .dz-title { font-size: 13px; color: var(--text); }
+  .dz-sub { margin-top: 6px; font-size: 11.5px; color: var(--muted-2); line-height: 1.7; }
+  .dz-sub .btn { margin-left: 8px; vertical-align: middle; }
+  .dz-head { display: flex; align-items: center; gap: 9px; }
+  .dz-count { font-size: 12px; color: var(--text); }
+  .dz-note { font-size: 10.5px; color: var(--muted-2); }
+  .dz-list {
+    display: flex; flex-wrap: wrap; gap: 6px;
+    margin-top: 8px; max-height: 96px; overflow-y: auto;
+  }
+  .dz-chip {
+    display: inline-flex; align-items: center; gap: 6px; max-width: 100%;
+    border: 1px solid #263140; background: #18202b; border-radius: 7px;
+    padding: 3px 8px; font-family: var(--mono); font-size: 11px;
+  }
+  .dz-chip.error { border-color: #4a2f2f; }
+  .dz-chip .o { color: var(--muted); max-width: 220px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .dz-chip .ar { color: var(--muted-2); }
+  .dz-chip .n { color: #8fc2ff; max-width: 220px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .dz-chip .n.same { color: var(--muted-2); }
+  .dz-chip .n.err { color: #ffb0b0; }
+  .dz-chip .n.wait { color: var(--muted-2); font-style: italic; }
   .table-wrap { flex: 1; overflow: auto; }
   table { width: 100%; border-collapse: collapse; }
   thead th {
@@ -431,6 +464,25 @@
       </div>
 
       <div class="pane" id="previewPane">
+        <div class="dropzone" id="dropzone">
+          <div class="dz-empty" id="dzEmpty">
+            <div class="dz-title">把文件拖到这里</div>
+            <div class="dz-sub">
+              拖入后显示原名称；添加规则后，右侧显示新名称。
+              <button class="btn small" id="pickFiles">选择文件…</button>
+            </div>
+          </div>
+          <div class="dz-filled hidden" id="dzFilled">
+            <div class="dz-head">
+              <span class="dz-count" id="dzCount"></span>
+              <span class="dz-note">优先于文件夹</span>
+              <div class="spacer"></div>
+              <button class="btn small" id="pickMore">添加文件…</button>
+              <button class="btn ghost small" id="clearFiles">清空</button>
+            </div>
+            <div class="dz-list" id="dzList"></div>
+          </div>
+        </div>
         <div class="table-wrap">
           <table id="previewTable">
             <thead>
@@ -503,6 +555,7 @@ const state = {
   api: null,
   booted: false,
   folder: "",
+  paths: [],
   rules: [],
   mode: "block",
   meta: [],
@@ -549,6 +602,21 @@ async function call(name, ...args) {
   return await fn(...args);
 }
 
+/* 原生拖放（Python 侧 WinForms）回调：只接收绝对路径，校验交给桥接。 */
+window.namecraftDrop = function (paths) {
+  if (!Array.isArray(paths)) return;
+  const list = paths.filter((p) => typeof p === "string" && p.trim());
+  if (!list.length) return;
+  state.paths = list;
+  renderDropzone();
+  preview();
+};
+
+window.namecraftDrag = function (active) {
+  const zone = $("#dropzone");
+  if (zone) zone.classList.toggle("drag", !!active);
+};
+
 /* ---------------- 启动 ---------------- */
 
 async function boot() {
@@ -572,6 +640,7 @@ async function boot() {
       }));
     renderModes();
     renderRules();
+    renderDropzone();
     if (state.folder) preview();
   } catch (err) {
     toast("初始化失败：" + err.message, "err");
@@ -887,17 +956,67 @@ function serializeRules() {
   return state.rules.map((r) => ({ type: r.type, enabled: r.enabled, params: r.params }));
 }
 
+function normKey(path) {
+  return String(path || "").replace(/\//g, "\\").toLowerCase();
+}
+
+function renderDropzone() {
+  const has = state.paths.length > 0;
+  $("#dropzone").classList.toggle("has-files", has);
+  $("#dzEmpty").classList.toggle("hidden", has);
+  $("#dzFilled").classList.toggle("hidden", !has);
+  if (!has) {
+    $("#dzList").innerHTML = "";
+    return;
+  }
+  $("#dzCount").textContent = `已拖入 ${state.paths.length} 个文件`;
+  const list = $("#dzList");
+  list.innerHTML = "";
+  const rows = new Map();
+  const data = state.preview;
+  if (data && data.source === "paths") {
+    (data.rows || []).forEach((r) => rows.set(normKey(r.path), r));
+  }
+  const hasRules = state.rules.some((r) => r.enabled);
+  state.paths.forEach((p) => {
+    const row = rows.get(normKey(p));
+    const chip = el("span", "dz-chip");
+    const oldName = el("span", "o", baseName(p));
+    oldName.title = p;
+    chip.appendChild(oldName);
+    if (!row) {
+      chip.appendChild(el("span", "n wait", "待预览"));
+    } else if (!hasRules) {
+      chip.appendChild(el("span", "n wait", "待添加规则"));
+    } else {
+      chip.appendChild(el("span", "ar", "→"));
+      const next = el("span", "n" + (row.changed ? "" : " same"), row.new);
+      next.title = row.status === "error" ? (row.reasons || []).join("；") : row.new;
+      chip.appendChild(next);
+    }
+    if (row && row.status === "error") {
+      chip.classList.add("error");
+      const mark = el("span", "n err", "!");
+      mark.title = (row.reasons || []).join("；");
+      chip.appendChild(mark);
+    }
+    chip.title = p;
+    list.appendChild(chip);
+  });
+}
+
 async function preview() {
   const folder = ($("#folder").value || "").trim();
   state.folder = folder;
-  if (!folder) {
+  const paths = state.paths.slice();
+  if (!folder && !paths.length) {
     state.preview = null;
     renderPreview();
     return;
   }
   setBusy(true);
   try {
-    const res = await call("preview", { folder, rules: serializeRules(), mode: state.mode });
+    const res = await call("preview", { folder, paths, rules: serializeRules(), mode: state.mode });
     if (!res.ok) {
       state.preview = null;
       renderPreview(res.error);
@@ -914,6 +1033,7 @@ async function preview() {
 }
 
 function renderPreview(error) {
+  renderDropzone();
   const body = $("#previewBody");
   body.innerHTML = "";
   const data = state.preview;
@@ -921,7 +1041,7 @@ function renderPreview(error) {
   const summary = $("#summary");
   if (!data) {
     empty.classList.remove("hidden");
-    empty.innerHTML = error ? escapeHtml(error) : "选择文件夹并添加规则后，这里显示改名预览。<br>预览只读，不会改动任何文件。";
+    empty.innerHTML = error ? escapeHtml(error) : "把文件拖入上方区域，或选择文件夹并添加规则后，这里显示改名预览。<br>预览只读，不会改动任何文件。";
     summary.textContent = "";
     $("#execute").disabled = true;
     return;
@@ -929,7 +1049,9 @@ function renderPreview(error) {
   const rows = data.rows || [];
   if (!rows.length) {
     empty.classList.remove("hidden");
-    empty.innerHTML = "该文件夹内没有文件（不递归子目录）。";
+    empty.innerHTML = data.source === "paths"
+      ? "拖入的文件列表为空，请重新拖入文件。"
+      : "该文件夹内没有文件（不递归子目录）。";
     summary.textContent = "";
     $("#execute").disabled = true;
     return;
@@ -1002,6 +1124,7 @@ async function executeFlow() {
   try {
     const res = await call("execute", {
       folder: state.folder,
+      paths: state.paths.slice(),
       rules: serializeRules(),
       mode: state.mode,
       confirm: selected,
@@ -1015,6 +1138,7 @@ async function executeFlow() {
         if (picked) {
           const retry = await call("execute", {
             folder: state.folder,
+            paths: state.paths.slice(),
             rules: serializeRules(),
             mode: state.mode,
             confirm: [...selected, ...picked],
@@ -1047,9 +1171,17 @@ function afterExecute(res) {
   const notes = (res.notes || []).filter(Boolean);
   toast(`已改名 ${res.count} 项。日志 ${res.journal.id}，可在「改名日志」中撤销。`, notes.length ? "warn" : "ok");
   if (notes.length) notes.forEach((n) => console.info("[namecraft]", n));
+  remapDropped((res.journal.entries || []).map((e) => [e.old, e.new]));
   state.journalloaded = false;
   preview();
   loadJournals();
+}
+
+function remapDropped(pairs) {
+  if (!state.paths.length || !pairs.length) return;
+  const map = new Map(pairs.map(([from, to]) => [normKey(from), to]));
+  state.paths = state.paths.map((p) => map.get(normKey(p)) || p);
+  renderDropzone();
 }
 
 /* ---------------- 日志与撤销 ---------------- */
@@ -1117,6 +1249,7 @@ async function undoFlow(journal) {
     const res = await call("undo", journal.id);
     if (!res.ok) { toast(res.error || "撤销失败", "err"); return; }
     toast(`已撤销 ${res.count} 项改名。`, "ok");
+    remapDropped((res.journal.entries || []).map((e) => [e.new, e.old]));
     loadJournals();
     preview();
   } catch (err) {
@@ -1263,13 +1396,43 @@ function setBusy(flag) {
 
 /* ---------------- 事件绑定 ---------------- */
 
+async function pickFiles(append) {
+  try {
+    const res = await call("pick_files", ($("#folder").value || "").trim(), "target");
+    if (!res.ok) { toast(res.error || "无法打开选择器", "err"); return; }
+    const picked = res.paths || [];
+    if (!picked.length) return;
+    const base = append ? state.paths.slice() : [];
+    const seen = new Set(base.map(normKey));
+    picked.forEach((p) => {
+      const key = normKey(p);
+      if (!seen.has(key)) { seen.add(key); base.push(p); }
+    });
+    state.paths = base;
+    renderDropzone();
+    preview();
+  } catch (err) {
+    toast("无法打开选择器：" + err.message, "err");
+  }
+}
+
+$("#pickFiles").addEventListener("click", () => pickFiles(false));
+$("#pickMore").addEventListener("click", () => pickFiles(true));
+$("#clearFiles").addEventListener("click", () => {
+  state.paths = [];
+  renderDropzone();
+  preview();
+});
+
 $("#browse").addEventListener("click", async () => {
   try {
     const res = await call("pick_folder", $("#folder").value.trim(), "target");
     if (!res.ok) { toast(res.error || "无法打开选择器", "err"); return; }
     if (!res.path) return;
+    state.paths = [];
     state.folder = res.path;
     $("#folder").value = res.path;
+    renderDropzone();
     preview();
   } catch (err) {
     toast("无法打开选择器：" + err.message, "err");
@@ -1277,9 +1440,17 @@ $("#browse").addEventListener("click", async () => {
 });
 
 $("#folder").addEventListener("keydown", (e) => {
-  if (e.key === "Enter") preview();
+  if (e.key === "Enter") {
+    state.paths = [];
+    renderDropzone();
+    preview();
+  }
 });
-$("#folder").addEventListener("change", () => preview());
+$("#folder").addEventListener("change", () => {
+  state.paths = [];
+  renderDropzone();
+  preview();
+});
 
 $("#addRule").addEventListener("click", openPicker);
 $("#pickerCancel").addEventListener("click", () => $("#pickerOverlay").classList.add("hidden"));

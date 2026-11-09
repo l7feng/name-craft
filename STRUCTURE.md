@@ -37,6 +37,7 @@
 ## 依赖与引用边界
 
 - 单向：`gui`/`cli` → `session` → `engine`；`session` → `fs`；`engine` 与 `rules` 不 import `fs`、`session`、`gui`（纯函数，无 IO）。
+- GUI 原生文件拖放只在 `gui/drop.py`（WebView2 宿主事件）；拖入路径的校验与去重由 `fs.items_from_paths` 完成，预览/执行复用 `session` 既有链路。
 - `pyproject.toml` 是依赖与工具配置唯一真源。
 - 例外必须写 `docs/adr/NNNN-短标题.md`。
 

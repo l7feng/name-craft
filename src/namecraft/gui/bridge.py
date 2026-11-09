@@ -11,10 +11,11 @@ import os
 
 from namecraft import __version__
 from namecraft.engine.models import Rule
+from namecraft.fs import items_from_paths
 from namecraft.fs import journal as journal_store
 from namecraft.session.execute import ExecutionError, UndoError, execute, undo
 from namecraft.session.plan import MODES, PlanError, blocked_targets, prepare
-from namecraft.session.preview import compute
+from namecraft.session.preview import compute, compute_items
 
 from . import schema, settings
 
@@ -72,6 +73,25 @@ def _rows_payload(rows) -> list[dict]:
         }
         for r in rows
     ]
+
+
+def _select_source(payload: dict, folder: str, rules: list[Rule]):
+    """按显式文件列表（拖入/多选）或文件夹计算预览，返回 (rows, cycles, occupied, source)。
+
+    两者同时给出时文件列表优先；显式列表为空则退回文件夹，方便清空拖拽后恢复原状态。
+    """
+    raw_paths = payload.get("paths")
+    if raw_paths is not None and not isinstance(raw_paths, list):
+        raise TypeError("文件列表必须是数组")
+    if raw_paths:
+        rows, cycles, occupied = compute_items(items_from_paths(raw_paths), rules)
+        return rows, cycles, occupied, "paths"
+    if not folder:
+        raise ValueError("请先拖入文件或选择文件夹")
+    if not os.path.isdir(folder):
+        raise ValueError(f"文件夹不存在：{folder}")
+    rows, cycles, occupied = compute(folder, rules)
+    return rows, cycles, occupied, "folder"
 
 
 class Bridge:
@@ -141,6 +161,34 @@ class Bridge:
             pass
         return {"ok": True, "path": path}
 
+    def pick_files(self, current: str = "", purpose: str = "target") -> dict:
+        """多选文件，作为原生拖放的键盘/触控回退入口。"""
+        try:
+            import webview
+        except ImportError:
+            return _error("未安装 pywebview，无法打开文件选择器")
+        window = self._window()
+        if window is None:
+            return _error("窗口尚未就绪")
+        remembered = settings.load().get("lastFolders", {}).get(purpose, "")
+        initial = first_existing_dir(current, remembered)
+        try:
+            chosen = window.create_file_dialog(
+                webview.OPEN_DIALOG, directory=initial or None, allow_multiple=True
+            )
+        except TypeError:
+            chosen = window.create_file_dialog(webview.OPEN_DIALOG, allow_multiple=True)
+        except OSError as error:
+            return _error(f"打开文件选择器失败：{error}")
+        if not chosen:
+            return {"ok": True, "paths": []}
+        paths = [str(p) for p in chosen]
+        try:
+            settings.save({"lastFolders": {purpose: first_existing_dir(paths[0])}})
+        except OSError:
+            pass
+        return {"ok": True, "paths": paths}
+
     def preview(self, payload: dict) -> dict:
         payload = payload if isinstance(payload, dict) else {}
         folder = str(payload.get("folder") or "").strip()
@@ -148,18 +196,16 @@ class Bridge:
             rules = to_rules(payload.get("rules"))
         except (TypeError, ValueError) as error:
             return _error(str(error))
-        if not folder:
-            return _error("请先选择文件夹")
-        if not os.path.isdir(folder):
-            return _error(f"文件夹不存在：{folder}")
         try:
-            rows, cycles, _ = compute(folder, rules)
+            rows, cycles, _, source = _select_source(payload, folder, rules)
         except (OSError, TypeError, ValueError) as error:
-            return _error(f"预览失败：{error}")
+            message = f"预览失败：{error}" if isinstance(error, OSError) else str(error)
+            return _error(message)
         self._remember(folder, payload.get("rules"), str(payload.get("mode", "block")))
         return {
             "ok": True,
             "folder": folder,
+            "source": source,
             "rows": _rows_payload(rows),
             "cycles": len(cycles),
             "summary": {
@@ -180,10 +226,8 @@ class Bridge:
             return _error(str(error))
         if mode not in MODES:
             return _error(f"未知冲突口径：{mode}")
-        if not folder or not os.path.isdir(folder):
-            return _error(f"文件夹不存在：{folder or '（空）'}")
         try:
-            rows, _, occupied = compute(folder, rules)
+            rows, _, occupied, _ = _select_source(payload, folder, rules)
             if mode == "overwrite":
                 blocked = blocked_targets(rows, occupied)
                 confirmed = {os.path.normcase(str(p)) for p in confirm}

@@ -28,9 +28,10 @@ def run() -> int:
         print('未安装 pywebview：请执行 pip install "pywebview>=5" 后重试。')
         return 2
     from .bridge import Bridge
+    from .drop import install as install_drop
 
     api = Bridge()
-    webview.create_window(
+    window = webview.create_window(
         "namecraft",
         str(ASSETS / "index.html"),
         js_api=api,
@@ -38,5 +39,5 @@ def run() -> int:
         height=820,
         min_size=(980, 640),
     )
-    webview.start()
+    webview.start(install_drop, (window,))
     return 0

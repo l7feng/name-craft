@@ -29,6 +29,32 @@ def list_files(directory: str, *, include_folders: bool = False) -> list[FileIte
     return [FileItem(p) for p in files + folders]
 
 
+def items_from_paths(paths: list[str]) -> list[FileItem]:
+    """把拖入/选中的完整路径校验去重后转成文件项（只接受现存文件）。
+
+    GUI 拖放给的是绝对路径；同路径不同大小写视作同一项，保留首次顺序。
+    目录、断链或空项一律拒绝，避免预览显示一份、执行时另一份。
+    """
+    items: list[FileItem] = []
+    seen: set[str] = set()
+    for raw in paths:
+        if not isinstance(raw, str):
+            raise TypeError("文件路径必须是字符串")
+        path = os.path.abspath(raw.strip().strip('"'))
+        if not path:
+            continue
+        key = os.path.normcase(path)
+        if key in seen:
+            continue
+        if not os.path.isfile(path):
+            raise ValueError(f"不是现存文件：{path}")
+        seen.add(key)
+        items.append(FileItem(path))
+    if not items:
+        raise ValueError("没有可处理的文件")
+    return items
+
+
 def occupied_paths(items: list[FileItem]) -> set[str]:
     """扫描各目标目录中已存在、且不属于本批原路径的完整路径集合。"""
     originals = {os.path.normcase(it.path) for it in items}

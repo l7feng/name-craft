@@ -98,6 +98,60 @@ def test_preview_reports_missing_folder_and_bad_rule(tmp_path):
     assert "无效表达式" in res["error"]
 
 
+def test_preview_paths_use_only_dropped_files(tmp_path):
+    folder = _setup(tmp_path, {"a.txt": "a", "b.txt": "b", "c.txt": "c"})
+    bridge = Bridge()
+    dropped = [
+        os.path.join(folder, "a.txt"),
+        os.path.join(folder, "b.txt"),
+        os.path.join(folder, "a.txt"),  # 重复路径只保留首次
+    ]
+    res = bridge.preview({"paths": dropped, "rules": [{"type": "case", "params": {"mode": "upper"}}]})
+    assert res["ok"] is True
+    assert res["source"] == "paths"
+    assert [r["old"] for r in res["rows"]] == ["a.txt", "b.txt"]
+    assert [r["new"] for r in res["rows"]] == ["A.txt", "B.txt"]
+
+
+def test_preview_paths_precede_folder_and_reject_bad_input(tmp_path):
+    folder = _setup(tmp_path, {"a.txt": "a", "b.txt": "b"})
+    bridge = Bridge()
+    only_a = bridge.preview(
+        _payload(folder, [{"type": "case", "params": {"mode": "upper"}}])
+        | {"paths": [os.path.join(folder, "a.txt")]}
+    )
+    assert only_a["ok"] is True
+    assert [r["old"] for r in only_a["rows"]] == ["a.txt"]
+
+    missing = bridge.preview({"paths": [os.path.join(folder, "nope.txt")]})
+    assert missing["ok"] is False
+    assert "不是现存文件" in missing["error"]
+    assert bridge.preview({"paths": [folder]})["ok"] is False
+    assert bridge.preview({"paths": os.path.join(folder, "a.txt")})["ok"] is False
+    empty = bridge.preview({"paths": []})
+    assert empty["ok"] is False
+    assert "拖入文件或选择文件夹" in empty["error"]
+
+
+def test_execute_paths_renames_only_dropped_files(tmp_path):
+    folder = _setup(tmp_path, {"a.txt": "a", "b.txt": "b", "c.txt": "c"})
+    bridge = Bridge()
+    dropped = [os.path.join(folder, "a.txt"), os.path.join(folder, "b.txt")]
+    res = bridge.execute(
+        {
+            "paths": dropped,
+            "rules": [{"type": "insert", "params": {"what": "x", "where": "prefix"}}],
+        }
+    )
+    assert res["ok"] is True
+    assert res["count"] == 2
+    assert sorted(os.listdir(folder)) == ["c.txt", "xa.txt", "xb.txt"]
+
+    undone = bridge.undo(res["journal"]["id"])
+    assert undone["ok"] is True
+    assert sorted(os.listdir(folder)) == ["a.txt", "b.txt", "c.txt"]
+
+
 def test_execute_block_mode_writes_and_journal_lists_undoable(tmp_path):
     folder = _setup(tmp_path, {"a.txt": "a", "b.txt": "b"})
     bridge = Bridge()
