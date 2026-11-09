@@ -3,7 +3,7 @@
 规则链式文件批量重命名工具（Windows，Python）。参考 ReNamer 7.2 的公开行为描述做干净室（clean-room）重写：只采用行为语义与公开文档示例作为测试基准，不含任何 ReNamer 代码、脚本或资源。
 
 - 产品名与仓名 `namecraft` 为人类 2026-11-09 赐名；项目记录在个人知识库 `5-领域-A/06-软件制作/89-文件批量重命名工具/`。
-- 当前阶段 S2：核心规则引擎（12 规则）＋ CLI 预览；GUI（pywebview）在 S3。
+- 当前阶段 S3：12 规则引擎、CLI 预览、pywebview 桌面界面、确认式覆盖、执行日志与撤销、PyInstaller 打包。
 - 与既有 `rename-unify` 仓相互独立、互不引用。
 
 ## 开发
@@ -11,13 +11,26 @@
 ```bash
 python -m venv .venv
 .venv/Scripts/pip install -e .[dev]
+.venv/Scripts/pip install -e .[gui]
 .venv/Scripts/pytest
+.venv/Scripts/ruff check .
 ```
 
-## CLI 预览（S2）
+## 桌面界面（S3）
+
+```bash
+namecraft gui
+# 或 namecraft-gui
+```
+
+界面支持规则栈增删排序与启停、实时预览、三种冲突口径（拦截／加 `(n)` 后缀／逐项确认覆盖）、执行日志与最近一次撤销。设置与日志写 `%LOCALAPPDATA%/namecraft/`，可用 `NAMECRAFT_HOME` 覆盖。
+
+## CLI 预览（S2 起）
 
 ```bash
 namecraft preview <目录> --rules rules.json
+namecraft execute <目录> --rules rules.json   # S3：真实执行并写日志
+namecraft undo                                 # S3：撤销最近一次已完成批次
 ```
 
 `rules.json` 为规则栈数组，每项 `{"type": "insert", "params": {...}, "enabled": true}`；规则类型与参数见 `src/namecraft/rules/` 各模块 docstring 与 `docs/adr/`。
@@ -34,11 +47,20 @@ namecraft preview <目录> --rules rules.json
 
 预览只读，不改名；存在校验错误时退出码 1，规则文件错误退出码 2。
 
+## 打包
+
+```bash
+.venv/Scripts/pip install pyinstaller
+.venv/Scripts/python -m PyInstaller packaging/namecraft.spec --noconfirm --clean
+```
+
+产物 `dist/namecraft/`（windowed onedir；exe 与 `_internal/` 同级）。交付包落 `D:/Ai-Files/Tools/Exe/11-批量重命名工具/namecraft-v0.2.0/`，含 README 与 `SHA256SUMS.txt`。
+
 ## 安全口径
 
 - 预览先行，执行按预览所见（WYSIWYG）；校验四项：重复、禁用字符、目标占用、超长。
-- 冲突默认拦截；可选 `(n)` 后缀消解；覆盖需逐次确认（S3 实现），无静默覆盖。
-- 撤销基于执行日志（S3 实现）。
+- 冲突默认拦截；可选 `(n)` 后缀消解；覆盖需逐项确认，无静默覆盖。
+- 撤销基于执行日志，仅最近一次已完成批次可撤销；被覆盖的旧文件不可恢复。
 
 ## 布局
 
