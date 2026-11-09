@@ -51,6 +51,7 @@ exe = EXE(
     codesign_identity=None,
     entitlements_file=None,
     version=str(PACKAGING / "version_info.txt"),
+    icon=str(PACKAGING / "namecraft.ico"),
 )
 coll = COLLECT(
     exe,

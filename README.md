@@ -51,10 +51,11 @@ namecraft undo                                 # S3：撤销最近一次已完�
 
 ```bash
 .venv/Scripts/pip install pyinstaller
+.venv/Scripts/python packaging/make_icon.py           # 重新生成 packaging/namecraft.ico
 .venv/Scripts/python -m PyInstaller packaging/namecraft.spec --noconfirm --clean
 ```
 
-产物 `dist/namecraft/`（windowed onedir；exe 与 `_internal/` 同级）。交付包落 `D:/Ai-Files/Tools/Exe/11-批量重命名工具/namecraft-v0.2.0/`，含 README 与 `SHA256SUMS.txt`。
+产物 `dist/namecraft/`（windowed onedir；exe 与 `_internal/` 同级）。图标由 `packaging/make_icon.py` 程序化生成（渐变圆角底 + 字母标记，16/20/24 用单字 N，更大尺寸用 nc），PyInstaller 将 `namecraft.ico` 写入 exe 资源；窗口标题栏与任务栏沿用该 exe 图标。交付包落 `D:/Ai-Files/Tools/Exe/11-批量重命名工具/namecraft-v0.2.1/`，含 README 与 `SHA256SUMS.txt`。
 
 ## 安全口径
 
