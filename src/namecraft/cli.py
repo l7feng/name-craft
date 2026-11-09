@@ -18,7 +18,10 @@ from namecraft.engine.chain import apply_chain
 from namecraft.engine.conflicts import detect_cycles
 from namecraft.engine.models import PreviewRow, Rule
 from namecraft.engine.validate import validate
+from namecraft.fs import journal as journal_store
 from namecraft.fs import list_files, occupied_paths
+from namecraft.session.execute import ExecutionError, UndoError, execute, undo
+from namecraft.session.plan import MODES, PlanError, prepare
 
 
 def load_rules(path: str) -> list[Rule]:
@@ -37,11 +40,14 @@ def load_rules(path: str) -> list[Rule]:
     return rules
 
 
-def build_rows(directory: str, rules: list[Rule]) -> tuple[list[PreviewRow], list[list[str]]]:
+def build_rows(
+    directory: str, rules: list[Rule]
+) -> tuple[list[PreviewRow], list[list[str]], set[str]]:
     items = list_files(directory)
     names = apply_chain(items, rules)
-    rows = validate(items, names, occupied_paths(items))
-    return rows, detect_cycles(items, names)
+    occupied = occupied_paths(items)
+    rows = validate(items, names, occupied)
+    return rows, detect_cycles(items, names), occupied
 
 
 def _print_table(rows: list[PreviewRow]) -> None:
@@ -75,7 +81,7 @@ def _print_json(rows: list[PreviewRow], cycles: list[list[str]]) -> None:
 def cmd_preview(args: argparse.Namespace) -> int:
     try:
         rules = load_rules(args.rules)
-        rows, cycles = build_rows(args.directory, rules)
+        rows, cycles, _ = build_rows(args.directory, rules)
     except (OSError, TypeError, ValueError) as e:
         print(f"错误：{e}", file=sys.stderr)
         return 2
@@ -94,6 +100,61 @@ def cmd_preview(args: argparse.Namespace) -> int:
     return 1 if any(r.status == "error" for r in rows) else 0
 
 
+def cmd_execute(args: argparse.Namespace) -> int:
+    try:
+        rules = load_rules(args.rules)
+        rows, _, occupied = build_rows(args.directory, rules)
+        plan = prepare(rows, occupied, mode=args.mode, confirm=set(args.confirm or ()))
+        if not plan.ops:
+            print("没有需要改名的文件。")
+            return 0
+        journal = execute(plan.ops, notes=plan.notes)
+    except (OSError, TypeError, ValueError, PlanError, ExecutionError) as e:
+        print(f"错误：{e}", file=sys.stderr)
+        return 1
+    if args.json:
+        print(json.dumps(journal.to_dict(), ensure_ascii=False, indent=2))
+    else:
+        print(f"已改名 {len(journal.entries)} 项（模式 {plan.mode}）。")
+        for note in journal.notes:
+            print(f"  注：{note}")
+        print(f"日志：{journal.id}（撤销：namecraft undo {journal.id}）")
+    return 0
+
+
+def cmd_journals(args: argparse.Namespace) -> int:
+    items = journal_store.list_all()
+    if args.json:
+        print(json.dumps(items, ensure_ascii=False, indent=2))
+        return 0
+    if not items:
+        print("暂无改名日志。")
+        return 0
+    latest = journal_store.latest_done_id()
+    for j in items:
+        mark = "← 可撤销" if j.get("id") == latest else ""
+        print(
+            f"{j.get('id')}  {j.get('status'):<8} {len(j.get('entries', [])):>3} 项"
+            f"  {j.get('created', '')} {mark}"
+        )
+    return 0
+
+
+def cmd_undo(args: argparse.Namespace) -> int:
+    try:
+        journal = undo(args.journal_id)
+    except (OSError, UndoError) as e:
+        print(f"错误：{e}", file=sys.stderr)
+        return 1
+    if args.json:
+        print(json.dumps(journal.to_dict(), ensure_ascii=False, indent=2))
+    else:
+        print(f"已撤销 {len(journal.entries)} 项改名（日志 {journal.id}）。")
+        for note in journal.notes:
+            print(f"  注：{note}")
+    return 0
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(prog="namecraft", description="文件批量重命名工具（干净室重写）")
     sub = parser.add_subparsers(dest="command", required=True)
@@ -102,6 +163,28 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--rules", required=True, help="规则栈 JSON 文件路径")
     p.add_argument("--json", action="store_true", help="输出 JSON 而非表格")
     p.set_defaults(func=cmd_preview)
+
+    e = sub.add_parser("execute", help="执行改名（写日志，可撤销）")
+    e.add_argument("directory", help="目标目录（不递归）")
+    e.add_argument("--rules", required=True, help="规则栈 JSON 文件路径")
+    e.add_argument(
+        "--mode",
+        choices=list(MODES),
+        default="block",
+        help="冲突口径：block 拦截／suffix 加 (n) 后缀／overwrite 覆盖（需逐项 confirm）",
+    )
+    e.add_argument("--confirm", action="append", default=[], help="覆盖模式确认的目标完整路径，可重复")
+    e.add_argument("--json", action="store_true", help="输出 JSON 而非文本")
+    e.set_defaults(func=cmd_execute)
+
+    j = sub.add_parser("journals", help="列出改名日志")
+    j.add_argument("--json", action="store_true", help="输出 JSON")
+    j.set_defaults(func=cmd_journals)
+
+    u = sub.add_parser("undo", help="撤销最近一次完成的改名")
+    u.add_argument("journal_id", help="日志 id（journals 命令可查）")
+    u.add_argument("--json", action="store_true", help="输出 JSON")
+    u.set_defaults(func=cmd_undo)
     return parser
 
 

@@ -67,3 +67,34 @@ def test_empty_directory_message(tmp_path, capsys):
     code = main(["preview", str(target), "--rules", str(rules)])
     assert code == 0
     assert "没有文件" in capsys.readouterr().out
+
+
+def test_execute_then_journals_then_undo(tmp_path, capsys, monkeypatch):
+    monkeypatch.setenv("NAMECRAFT_HOME", str(tmp_path / "home"))
+    target, rules = _setup(tmp_path, ["a.txt", "b.txt"])
+    _write_rules(rules, [{"type": "insert", "params": {"what": "x", "where": "prefix"}}])
+    assert main(["execute", target, "--rules", rules]) == 0
+    assert (tmp_path / "files" / "xa.txt").exists()
+    capsys.readouterr()  # 丢弃 execute 的输出，只取 journals 的首行
+    assert main(["journals"]) == 0
+    out = capsys.readouterr().out
+    journal_id = out.strip().split()[0]
+    assert main(["undo", journal_id]) == 0
+    assert (tmp_path / "files" / "a.txt").exists()
+    assert not (tmp_path / "files" / "xa.txt").exists()
+
+
+def test_execute_block_mode_refuses_occupied_target(tmp_path, capsys):
+    target, rules = _setup(tmp_path, ["a.txt", "b.txt", "taken.txt"])
+    _write_rules(rules, [{"type": "userinput", "params": {"names": ["taken"]}}])
+    code = main(["execute", target, "--rules", rules])
+    assert code == 1
+    assert "错误" in capsys.readouterr().err
+
+
+def test_execute_suffix_mode_resolves_duplicates(tmp_path):
+    target, rules = _setup(tmp_path, ["a.txt", "b.txt"])
+    _write_rules(rules, [{"type": "userinput", "params": {"names": ["same", "same"]}}])
+    assert main(["execute", target, "--rules", rules, "--mode", "suffix"]) == 0
+    names = {p.name for p in (tmp_path / "files").iterdir()}
+    assert names == {"same.txt", "same (2).txt"}
