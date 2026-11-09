@@ -252,3 +252,66 @@ def test_pick_folder_passes_current_directory_and_remembers(tmp_path, monkeypatc
     res = bridge2.pick_folder("", "target")
     assert res["path"] == ""
     assert window2.calls[0]["directory"] == str(chosen)
+
+
+class _SaveWindow:
+    def __init__(self, result):
+        self.result = result
+        self.calls = []
+
+    def create_file_dialog(self, kind, **kwargs):
+        self.calls.append({"kind": kind, **kwargs})
+        return self.result
+
+
+def test_bootstrap_includes_templates_and_ucs_api():
+    bridge = Bridge()
+    assert bridge.bootstrap()["templates"] == []
+
+    categories = bridge.ucs_categories()
+    assert categories["ok"] is True
+    assert categories["count"] == 753
+    assert categories["categories"][0][0] == "AIRBlow"
+    assert len(categories["categories"][0]) == 6
+
+    guide = bridge.ucs_guide()
+    assert guide["ok"] is True
+    assert guide["markdown"].startswith("# UCS 命名规范")
+    assert guide["guidePath"].endswith("UCS命名规范.md")
+    assert guide["tablePath"].endswith("UCS分类表-8.2.1.tsv")
+
+
+def test_template_bridge_roundtrip_and_validation():
+    bridge = Bridge()
+    saved = bridge.save_template(
+        {"name": "测试模板", "rules": [{"type": "case", "params": {"mode": "upper"}}]}
+    )
+    assert saved["ok"] is True
+    assert saved["template"]["name"] == "测试模板"
+    assert bridge.bootstrap()["templates"][0]["name"] == "测试模板"
+
+    assert bridge.save_template({"name": "坏", "rules": [{"type": "nope"}]})["ok"] is False
+    assert bridge.save_template({"name": "空", "rules": []})["ok"] is False
+    assert bridge.save_template({"name": "", "rules": [{"type": "case"}]})["ok"] is False
+
+    removed = bridge.delete_template(saved["template"]["id"])
+    assert removed["ok"] is True
+    assert removed["templates"] == []
+    assert bridge.delete_template("missing")["ok"] is False
+
+
+def test_save_ucs_doc_copies_bundled_file(tmp_path, monkeypatch):
+    fake_module = types.SimpleNamespace(SAVE_DIALOG=30)
+    monkeypatch.setitem(sys.modules, "webview", fake_module)
+    target = tmp_path / "UCS规范副本.md"
+    window = _SaveWindow(str(target))
+    res = Bridge(window_getter=lambda: window).save_ucs_doc("guide")
+    assert res == {"ok": True, "path": str(target)}
+    assert target.read_text(encoding="utf-8").startswith("# UCS 命名规范")
+    assert window.calls[0]["kind"] == 30
+    assert window.calls[0]["save_filename"] == "UCS命名规范.md"
+
+    assert Bridge(window_getter=lambda: window).save_ucs_doc("nope")["ok"] is False
+
+    cancelled = Bridge(window_getter=lambda: _SaveWindow("")).save_ucs_doc("table")
+    assert cancelled == {"ok": True, "path": ""}

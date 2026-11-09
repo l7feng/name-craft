@@ -7,7 +7,7 @@
     namecraft undo <日志id>
 
 规则文件为 JSON 数组：`[{"type": "insert", "params": {...}, "enabled": true}]`，
-类型键见 rules.REGISTRY（12 种）。预览按栈序计算新名并做四项校验；
+类型键见 rules.REGISTRY（13 种）。预览按栈序计算新名并做四项校验；
 不写盘、不改名。存在校验错误时退出码 1，参数或规则文件错误退出码 2。
 """
 

@@ -8,8 +8,9 @@
 from __future__ import annotations
 
 import os
+import shutil
 
-from namecraft import __version__
+from namecraft import __version__, ucs
 from namecraft.engine.models import Rule
 from namecraft.fs import items_from_paths
 from namecraft.fs import journal as journal_store
@@ -17,7 +18,7 @@ from namecraft.session.execute import ExecutionError, UndoError, execute, undo
 from namecraft.session.plan import MODES, PlanError, blocked_targets, prepare
 from namecraft.session.preview import compute, compute_items
 
-from . import schema, settings
+from . import docs, schema, settings, templates
 
 
 def _error(message: str, **extra) -> dict:
@@ -129,6 +130,7 @@ class Bridge:
             "version": __version__,
             "settings": settings.load(),
             "rules": schema.RULE_META,
+            "templates": templates.load(),
             "modes": [
                 {"value": "block", "label": "拦截", "desc": "有冲突就拒绝，不动文件"},
                 {"value": "suffix", "label": "加后缀", "desc": "重名时自动加 (2)、(3)…"},
@@ -278,3 +280,74 @@ class Bridge:
         except OSError as error:
             return _error(f"保存设置失败：{error}")
         return {"ok": True, "settings": saved}
+
+    def save_template(self, payload: dict) -> dict:
+        payload = payload if isinstance(payload, dict) else {}
+        raw_rules = payload.get("rules")
+        try:
+            to_rules(raw_rules)  # 先拒未知类型与坏结构；参数错误留给预览提示
+            item = templates.save(payload.get("name"), raw_rules, str(payload.get("id") or ""))
+        except (TypeError, ValueError, OSError) as error:
+            return _error(str(error))
+        return {"ok": True, "template": item, "templates": templates.load()}
+
+    def delete_template(self, template_id: str) -> dict:
+        try:
+            remaining = templates.delete(str(template_id or ""))
+        except (KeyError, OSError) as error:
+            return _error(str(error))
+        return {"ok": True, "templates": remaining}
+
+    def ucs_categories(self) -> dict:
+        return {
+            "ok": True,
+            "count": len(ucs.CATEGORIES),
+            "categories": [list(item) for item in ucs.CATEGORIES],
+        }
+
+    def ucs_guide(self) -> dict:
+        try:
+            text = docs.read_text("guide")
+        except (OSError, ValueError) as error:
+            return _error(f"读取 UCS 规范失败：{error}")
+        return {
+            "ok": True,
+            "markdown": text,
+            "guidePath": str(docs.doc_path("guide")),
+            "tablePath": str(docs.doc_path("table")),
+        }
+
+    def save_ucs_doc(self, kind: str = "guide") -> dict:
+        """把随包 UCS 规范或分类表另存到用户选择的位置。"""
+        try:
+            source = docs.doc_path(str(kind or "guide"))
+        except ValueError as error:
+            return _error(str(error))
+        if not source.is_file():
+            return _error(f"随包文档缺失：{source.name}")
+        try:
+            import webview
+        except ImportError:
+            return _error("未安装 pywebview，无法打开另存对话框")
+        window = self._window()
+        if window is None:
+            return _error("窗口尚未就绪")
+        home = os.path.expanduser("~")
+        desktop = os.path.join(home, "Desktop")
+        initial = desktop if os.path.isdir(desktop) else home
+        try:
+            chosen = window.create_file_dialog(
+                webview.SAVE_DIALOG, directory=initial, save_filename=source.name
+            )
+        except TypeError:
+            chosen = window.create_file_dialog(webview.SAVE_DIALOG, save_filename=source.name)
+        except OSError as error:
+            return _error(f"打开另存对话框失败：{error}")
+        if not chosen:
+            return {"ok": True, "path": ""}
+        target = chosen[0] if isinstance(chosen, (list, tuple)) else str(chosen)
+        try:
+            shutil.copyfile(source, target)
+        except OSError as error:
+            return _error(f"另存失败：{error}")
+        return {"ok": True, "path": target}

@@ -8,11 +8,11 @@
 | --- | --- | --- | --- | --- |
 | `src/namecraft/` | 开发 | 唯一可导入包：engine／rules／session／fs／gui／cli | 生成物、缓存、配置实值、密钥 | 长期，随版本 |
 | `tests/` | 开发 | 与源码对应的测试，只经安装后的包导入 | 任何 `sys.path` 注入、一次性验证脚本、测试数据大文件 | 长期，随版本 |
-| `docs/` | 全员 | 设计说明与 `adr/` 决策记录 | 自动生成的 API 文档、构建产物 | 长期，随版本 |
+| `docs/` | 全员 | 设计说明、`adr/` 决策记录、UCS 规范与分类表 | 自动生成的 API 文档、构建产物 | 长期，随版本 |
 | `packaging/` | 构建 | PyInstaller 规格、入口、版本资源、图标生成脚本与 `.ico` | 生成物、证书、密钥 | 长期，随版本 |
 | `dist/` `build/` | 构建 | PyInstaller 可再生产物（S3） | 任何手写内容 | 临时，可删可重建 |
 
-运行态数据（撤销日志、用户配置）写 `%LOCALAPPDATA%/namecraft/`，不入仓；打包交付产物落 `D:/Ai-Files/Tools/Exe/`（S3 起）。
+运行态数据（撤销日志、用户配置、自定义规则模板）写 `%LOCALAPPDATA%/namecraft/`，不入仓；打包交付产物落 `D:/Ai-Files/Tools/Exe/`（S3 起），并随包携带 `docs/` 下的 UCS 规范与分类表。
 
 ## 落点路由表
 
@@ -32,6 +32,7 @@
 
 - 目录与文件小写蛇形（Python 惯例，全局统一）；测试 `test_<被测模块>.py`。
 - 每规则一文件，文件名即规则类型名（`insert.py`、`regex.py`）。
+- `src/namecraft/ucs.py` 是 `scripts/build_ucs.py` 从 `docs/UCS分类表-8.2.1.tsv` 生成的纯数据模块，不手改；改分类先换 TSV 再重跑脚本。
 - 版本号、日期、机器名不写进目录名。
 
 ## 依赖与引用边界

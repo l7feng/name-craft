@@ -17,6 +17,7 @@ from .remove import make as remove
 from .replace import make as replace
 from .serialize import make as serialize
 from .strip import make as strip
+from .ucs import make as ucs
 from .userinput import make as userinput
 
 REGISTRY = {
@@ -32,4 +33,5 @@ REGISTRY = {
     "cleanup": cleanup,
     "regex": regex,
     "userinput": userinput,
+    "ucs": ucs,
 }

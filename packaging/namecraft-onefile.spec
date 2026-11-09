@@ -19,6 +19,7 @@ a = Analysis(
     binaries=[],
     datas=[
         (str(PROJECT / "src" / "namecraft" / "gui" / "assets"), "namecraft/gui/assets"),
+        (str(PROJECT / "docs"), "docs"),
     ],
     hiddenimports=[
         "clr",

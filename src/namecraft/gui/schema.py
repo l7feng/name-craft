@@ -255,6 +255,30 @@ RULE_META = [
             _SKIP_EXT,
         ],
     },
+    {
+        "type": "ucs",
+        "name": "UCS 命名",
+        "desc": "按 UCS 8.2.1 结构生成 CatID_FXName_CreatorID_SourceID",
+        "fields": [
+            _f("catid", "UCS 分类（CatID）", "ucs", "AIRBlow", hint="753 个分类，可点「选择分类」搜索"),
+            _f(
+                "fx_mode",
+                "FXName 来源",
+                "select",
+                "current",
+                options=[("current", "使用当前文件名"), ("fixed", "固定描述"), ("list", "按行名单")],
+            ),
+            _f("fx_name", "固定描述", when={"fx_mode": "fixed"}),
+            _f("fx_list", "描述名单（每行一个）", "textarea", "", when={"fx_mode": "list"}),
+            _f("creator", "CreatorID（录音师／厂商）"),
+            _f("source", "SourceID（项目／库名）"),
+            _f("user_category", "UserCategory（可选，接在 CatID 后）"),
+            _f("vendor_category", "VendorCategory（可选，接在 FXName 前）"),
+            _f("user_data", "UserData（可选，末尾编号／设备）"),
+            _f("strip_existing", "剥离已有 UCS 分类前缀", "check", True),
+            _f("sanitize", "规范非法字符与空白", "check", True),
+        ],
+    },
 ]
 
 BY_TYPE = {item["type"]: item for item in RULE_META}

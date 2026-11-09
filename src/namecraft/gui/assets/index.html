@@ -4,6 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>namecraft</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%236cb0ff'/%3E%3Ctext x='16' y='21' font-family='Segoe UI' font-size='13' font-weight='700' text-anchor='middle' fill='%230b1220'%3Enc%3C/text%3E%3C/svg%3E">
 <style>
   :root {
     --bg: #0f1115;
@@ -218,6 +219,9 @@
   .checkrow { display: flex; align-items: center; gap: 7px; font-size: 12px; color: var(--text); cursor: pointer; }
   .checkrow input { accent-color: var(--accent); width: 14px; height: 14px; }
   .field.inline { display: flex; flex-direction: column; }
+  .inline-actions { display: flex; align-items: center; gap: 6px; margin-top: 6px; flex-wrap: wrap; }
+  .field .ucs-name { margin-top: 4px; font-size: 10.5px; color: var(--muted-2); }
+  .field .ucs-name.bad { color: #ff9f9f; }
 
   .empty {
     color: var(--muted-2);
@@ -401,6 +405,75 @@
   .change-preview .n { color: #8fc2ff; flex: 1; word-break: break-all; }
   .change-preview .ar { color: var(--muted-2); }
 
+  /* ---------- 规则模板 ---------- */
+  .tpl-save { display: flex; gap: 8px; padding-top: 10px; }
+  .tpl-save input, .ucs-toolbar input {
+    flex: 1; min-width: 0;
+    background: #10141b; border: 1px solid var(--line); border-radius: 7px;
+    padding: 6px 9px; font-size: 12px; color: var(--text); outline: none;
+  }
+  .tpl-save input:focus, .ucs-toolbar input:focus {
+    border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft);
+  }
+  .tpl-hint { margin-top: 7px; font-size: 11px; color: var(--muted-2); }
+  .tpl-list { display: flex; flex-direction: column; gap: 7px; margin-top: 12px; }
+  .tpl-item {
+    display: flex; align-items: center; gap: 10px;
+    border: 1px solid var(--line-soft); border-radius: 8px;
+    background: #161b24; padding: 7px 10px;
+  }
+  .tpl-main { flex: 1; min-width: 0; }
+  .tpl-name { font-size: 12.5px; font-weight: 600; }
+  .tpl-meta {
+    font-size: 10.5px; color: var(--muted-2); margin-top: 2px;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  }
+  .tpl-actions { display: flex; gap: 5px; flex: none; }
+
+  /* ---------- UCS 选择与规范 ---------- */
+  .ucs-toolbar { display: flex; align-items: center; gap: 10px; padding-top: 10px; }
+  .ucs-toolbar .count { color: var(--muted-2); font-size: 11px; white-space: nowrap; }
+  .ucs-list {
+    margin-top: 10px; max-height: 52vh; overflow-y: auto;
+    display: flex; flex-direction: column; gap: 1px;
+    border: 1px solid var(--line-soft); border-radius: 8px; padding: 4px;
+  }
+  .ucs-item {
+    display: grid; grid-template-columns: 104px minmax(0, 1fr) minmax(0, 1fr);
+    gap: 9px; align-items: baseline;
+    border: 0; border-radius: 6px; background: transparent;
+    color: var(--text); text-align: left; padding: 6px 8px; cursor: pointer;
+  }
+  .ucs-item:hover { background: #232c39; }
+  .ucs-item.active { background: #23344a; box-shadow: inset 0 0 0 1px #34455c; }
+  .ucs-id { font-family: var(--mono); font-size: 11.5px; color: #8fc2ff; }
+  .ucs-zh { font-size: 12px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .ucs-en { font-size: 10.5px; color: var(--muted-2); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .guide-body { user-select: text; font-size: 12.5px; line-height: 1.75; padding-bottom: 6px; }
+  .guide-body h1 { font-size: 18px; margin: 2px 0 10px; }
+  .guide-body h2 { font-size: 14px; margin: 18px 0 7px; padding-bottom: 4px; border-bottom: 1px solid var(--line-soft); }
+  .guide-body h3 { font-size: 12.5px; margin: 13px 0 5px; }
+  .guide-body p { margin: 7px 0; color: var(--text); }
+  .guide-body ul, .guide-body ol { margin: 7px 0; padding-left: 22px; }
+  .guide-body li { margin: 3px 0; }
+  .guide-body blockquote {
+    margin: 8px 0; padding: 7px 11px; border-left: 3px solid #3d5a7e;
+    background: #151c27; color: var(--muted); border-radius: 0 6px 6px 0;
+  }
+  .guide-body code {
+    font-family: var(--mono); font-size: 11.5px; background: #10141b;
+    border: 1px solid var(--line-soft); border-radius: 4px; padding: 1px 4px;
+  }
+  .guide-body pre {
+    margin: 9px 0; padding: 9px 11px; overflow-x: auto;
+    background: #10141b; border: 1px solid var(--line-soft); border-radius: 7px;
+  }
+  .guide-body pre code { border: 0; padding: 0; background: transparent; }
+  .guide-body table { margin: 9px 0; font-size: 11.5px; }
+  .guide-body th, .guide-body td { border: 1px solid var(--line-soft); padding: 5px 8px; text-align: left; vertical-align: top; }
+  .guide-body th { background: #161b24; color: var(--muted); font-weight: 600; }
+  .guide-meta { margin-top: 8px; font-size: 10.5px; color: var(--muted-2); word-break: break-all; user-select: text; }
+
   .toast {
     position: fixed; left: 50%; bottom: 26px; transform: translateX(-50%) translateY(12px);
     z-index: 80; opacity: 0; pointer-events: none;
@@ -447,6 +520,7 @@
         <h2>规则栈</h2>
         <span class="count" id="ruleCount"></span>
         <div class="spacer"></div>
+        <button id="templateBtn" class="btn small ghost">规则模板</button>
         <button id="addRule" class="btn small">＋ 添加规则</button>
       </div>
       <div class="rule-list" id="ruleList"></div>
@@ -531,6 +605,67 @@
     </div>
   </div>
 
+  <!-- 规则模板 -->
+  <div class="overlay hidden" id="templateOverlay">
+    <div class="modal" style="width:min(680px,100%)">
+      <div class="modal-head">
+        <h3>规则模板</h3>
+        <p>把当前规则栈存成模板；换一批文件时一键套用。模板只保存规则，不保存文件路径。</p>
+      </div>
+      <div class="modal-body">
+        <div class="tpl-save">
+          <input id="templateName" placeholder="模板名称，如「UCS 音效归档」" maxlength="40" spellcheck="false">
+          <button id="templateSave" class="btn primary small">保存当前规则</button>
+        </div>
+        <div class="tpl-hint" id="templateHint"></div>
+        <div class="tpl-list" id="templateList"></div>
+        <div class="empty hidden" id="templatesEmpty">还没有模板。添加规则后，在上方命名并保存。</div>
+      </div>
+      <div class="modal-actions">
+        <button class="btn" id="templateClose">关闭</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- UCS 分类选择 -->
+  <div class="overlay hidden" id="ucsOverlay">
+    <div class="modal" style="width:min(760px,100%)">
+      <div class="modal-head">
+        <h3>选择 UCS 分类（CatID）</h3>
+        <p>按 CatID、英文类别或中文类别搜索；只列出 UCS 8.2.1 分类表中的 753 项。</p>
+      </div>
+      <div class="modal-body">
+        <div class="ucs-toolbar">
+          <input id="ucsSearch" placeholder="搜索：GUN、枪、脚步、FOLY…" spellcheck="false" autocomplete="off">
+          <span class="count" id="ucsCount"></span>
+        </div>
+        <div class="ucs-list" id="ucsList"></div>
+      </div>
+      <div class="modal-actions">
+        <button class="btn" id="ucsCancel">取消</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- UCS 规范 -->
+  <div class="overlay hidden" id="guideOverlay">
+    <div class="modal" style="width:min(820px,100%);max-height:88vh">
+      <div class="modal-head">
+        <h3>UCS 命名规范</h3>
+        <p>随软件附带的 UCS 8.2.1 使用说明；可另存到任意位置，也可在交付目录的 docs 文件夹中查看。</p>
+      </div>
+      <div class="modal-body">
+        <div class="guide-body" id="guideBody"></div>
+        <div class="guide-meta" id="guideMeta"></div>
+      </div>
+      <div class="modal-actions">
+        <button class="btn small" id="guideSaveTable">另存分类表…</button>
+        <button class="btn small" id="guideSave">另存规范…</button>
+        <button class="btn" id="guideClose">关闭</button>
+      </div>
+    </div>
+  </div>
+
   <!-- 通用确认 -->
   <div class="overlay hidden" id="confirmOverlay">
     <div class="modal" style="width:min(560px,100%)">
@@ -566,6 +701,10 @@ const state = {
   seq: 1,
   busy: false,
   journalloaded: false,
+  templates: [],
+  ucs: null,
+  ucsTarget: null,
+  guide: null,
 };
 
 const $ = (sel) => document.querySelector(sel);
@@ -625,6 +764,7 @@ async function boot() {
     if (!res || !res.ok) throw new Error((res && res.error) || "初始化失败");
     state.meta = res.rules || [];
     state.modes = res.modes || [];
+    state.templates = res.templates || [];
     $("#version").textContent = "v" + res.version;
     const saved = res.settings || {};
     state.mode = saved.mode || "block";
@@ -642,6 +782,9 @@ async function boot() {
     renderRules();
     renderDropzone();
     if (state.folder) preview();
+    loadUcsCategories()
+      .then(() => { if (state.rules.some((r) => r.type === "ucs")) renderRules(); })
+      .catch(() => {});
   } catch (err) {
     toast("初始化失败：" + err.message, "err");
   }
@@ -721,6 +864,7 @@ function renderRules() {
 
 function fieldNode(rule, field) {
   const wrap = el("div", "field");
+  const extra = document.createDocumentFragment();
   if (field.when && !matchWhen(field.when, rule.params)) wrap.classList.add("hidden");
 
   if (field.kind === "check") {
@@ -771,6 +915,35 @@ function fieldNode(rule, field) {
         rule.params[field.key] = Number.isNaN(n) ? (field.default ?? 0) : n;
         onRuleEdited(rule);
       });
+    } else if (field.kind === "ucs") {
+      input = el("input");
+      input.type = "text";
+      input.value = rule.params[field.key] ?? "";
+      input.placeholder = "如 AIRBlow";
+      input.spellcheck = false;
+      const label = el("div", "ucs-name");
+      const syncLabel = () => {
+        label.textContent = ucsName(rule.params[field.key]);
+        label.classList.toggle(
+          "bad",
+          !!String(rule.params[field.key] || "").trim() && !!state.ucs && !findUcs(rule.params[field.key])
+        );
+      };
+      input.addEventListener("input", () => {
+        rule.params[field.key] = input.value;
+        syncLabel();
+        onRuleEdited(rule);
+      });
+      syncLabel();
+      const row = el("div", "inline-actions");
+      const choose = el("button", "btn small", "选择分类…");
+      choose.type = "button";
+      choose.addEventListener("click", () => openUcsPicker(rule));
+      const guide = el("button", "btn ghost small", "查看 UCS 规范");
+      guide.type = "button";
+      guide.addEventListener("click", openGuide);
+      row.append(choose, guide);
+      extra.append(row, label);
     } else {
       input = el("input");
       input.type = "text";
@@ -783,6 +956,7 @@ function fieldNode(rule, field) {
     }
     input.id = "f" + rule.id + field.key;
     wrap.appendChild(input);
+    wrap.appendChild(extra);
     if (field.hint) wrap.appendChild(el("div", "hint", field.hint));
   }
   return wrap;
@@ -849,6 +1023,11 @@ function summarize(rule) {
     }
     case "regex": return `/${short(p.expression, 18)}/ → “${short(p.replacement)}”`;
     case "userinput": return `${String(p.names || "").split("\n").filter(Boolean).length || 0} 个指定名称`;
+    case "ucs": {
+      const mode = { current: "当前名作 FXName", fixed: "固定描述", list: "按行名单" }[p.fx_mode] || p.fx_mode;
+      const tags = [p.creator && "Creator", p.source && "Source"].filter(Boolean);
+      return `${p.catid || "未选分类"} · ${mode}${tags.length ? " · " + tags.join("+") : ""}`;
+    }
     default: return "";
   }
 }
@@ -897,6 +1076,218 @@ function openPicker() {
     grid.appendChild(btn);
   });
   $("#pickerOverlay").classList.remove("hidden");
+}
+
+/* ---------------- 自定义规则模板 ---------------- */
+
+function openTemplates() {
+  $("#templateName").value = "";
+  $("#templateHint").textContent = state.rules.length
+    ? `当前 ${state.rules.length} 条规则；保存为模板后可在任意批次套用。保存同名模板会覆盖旧版本。`
+    : "当前规则栈为空；先添加规则，再保存为模板。";
+  $("#templateSave").disabled = state.rules.length === 0;
+  renderTemplates();
+  $("#templateOverlay").classList.remove("hidden");
+  $("#templateName").focus();
+}
+
+function renderTemplates() {
+  const list = $("#templateList");
+  list.innerHTML = "";
+  $("#templatesEmpty").classList.toggle("hidden", state.templates.length > 0);
+  state.templates.forEach((tpl) => {
+    const item = el("div", "tpl-item");
+    const main = el("div", "tpl-main");
+    main.appendChild(el("div", "tpl-name", tpl.name));
+    const names = (tpl.rules || []).map((r) => ruleMeta(r.type).name).join(" → ");
+    const meta = `${(tpl.rules || []).length} 条规则${tpl.updated ? " · " + tpl.updated : ""}${names ? " · " + names : ""}`;
+    main.appendChild(el("div", "tpl-meta", meta));
+    main.title = names;
+    item.appendChild(main);
+
+    const actions = el("div", "tpl-actions");
+    const apply = el("button", "btn small", "套用");
+    apply.addEventListener("click", () => applyTemplate(tpl));
+    const del = el("button", "btn ghost small", "删除");
+    del.addEventListener("click", () => deleteTemplate(tpl));
+    actions.append(apply, del);
+    item.appendChild(actions);
+    list.appendChild(item);
+  });
+}
+
+async function saveTemplate() {
+  const name = $("#templateName").value.trim();
+  if (!state.rules.length) { toast("当前没有规则可保存。", "warn"); return; }
+  if (!name) { toast("请先填写模板名称。", "warn"); $("#templateName").focus(); return; }
+  setBusy(true);
+  try {
+    const res = await call("save_template", { name, rules: serializeRules() });
+    if (!res.ok) { toast(res.error || "保存模板失败", "err"); return; }
+    state.templates = res.templates || [];
+    renderTemplates();
+    $("#templateHint").textContent = `已保存「${res.template.name}」。同名保存会覆盖旧版本。`;
+    $("#templateName").value = "";
+    toast(`模板「${res.template.name}」已保存。`, "ok");
+  } catch (err) {
+    toast("保存模板失败：" + err.message, "err");
+  } finally {
+    setBusy(false);
+  }
+}
+
+async function applyTemplate(tpl) {
+  const rules = (tpl.rules || [])
+    .filter((r) => state.meta.some((m) => m.type === r.type))
+    .map((r) => ({
+      id: state.seq++,
+      type: r.type,
+      enabled: r.enabled !== false,
+      params: { ...defaultsFor(r.type), ...(r.params || {}) },
+    }));
+  if (!rules.length) { toast("该模板没有当前版本可用的规则。", "warn"); return; }
+  if (state.rules.length) {
+    const ok = await askConfirm({
+      title: "套用规则模板",
+      message: `将用「${tpl.name}」的 ${rules.length} 条规则替换当前 ${state.rules.length} 条规则。文件夹与文件列表保持不变。`,
+      okLabel: "套用",
+    });
+    if (!ok) return;
+  }
+  state.rules = rules;
+  state.open.clear();
+  $("#templateOverlay").classList.add("hidden");
+  renderRules();
+  schedulePreview();
+  toast(`已套用模板「${tpl.name}」。`, "ok");
+}
+
+async function deleteTemplate(tpl) {
+  const ok = await askConfirm({
+    title: "删除规则模板",
+    message: `删除模板「${tpl.name}」？只删除模板，不影响文件和当前规则栈。`,
+    okLabel: "删除",
+    danger: true,
+  });
+  if (!ok) return;
+  try {
+    const res = await call("delete_template", tpl.id);
+    if (!res.ok) { toast(res.error || "删除模板失败", "err"); return; }
+    state.templates = res.templates || [];
+    renderTemplates();
+    toast(`模板「${tpl.name}」已删除。`, "ok");
+  } catch (err) {
+    toast("删除模板失败：" + err.message, "err");
+  }
+}
+
+/* ---------------- UCS 分类与规范 ---------------- */
+
+let ucsPromise = null;
+
+function loadUcsCategories() {
+  if (state.ucs) return Promise.resolve(state.ucs);
+  if (ucsPromise) return ucsPromise;
+  ucsPromise = call("ucs_categories")
+    .then((res) => {
+      if (!res || !res.ok) throw new Error((res && res.error) || "读取 UCS 分类失败");
+      state.ucs = res.categories || [];
+      return state.ucs;
+    })
+    .finally(() => { ucsPromise = null; });
+  return ucsPromise;
+}
+
+function findUcs(catid) {
+  const key = String(catid || "").trim().toLowerCase();
+  if (!key || !state.ucs) return null;
+  return state.ucs.find((c) => c[0].toLowerCase() === key) || null;
+}
+
+function ucsName(catid) {
+  const key = String(catid || "").trim();
+  if (!key) return "未选择分类";
+  const found = findUcs(key);
+  if (!found) return state.ucs ? "不在 UCS 8.2.1 分类表中" : "（分类表加载中…）";
+  return `${found[3]} / ${found[4]}（${found[0]}）`;
+}
+
+async function openUcsPicker(rule) {
+  state.ucsTarget = rule;
+  try {
+    await loadUcsCategories();
+  } catch (err) {
+    toast("读取 UCS 分类失败：" + err.message, "err");
+    return;
+  }
+  $("#ucsSearch").value = "";
+  renderUcsList("");
+  $("#ucsOverlay").classList.remove("hidden");
+  $("#ucsSearch").focus();
+}
+
+function renderUcsList(query) {
+  const list = $("#ucsList");
+  list.innerHTML = "";
+  const items = state.ucs || [];
+  const q = String(query || "").trim().toLowerCase();
+  const matched = q ? items.filter((c) => c.join(" ").toLowerCase().includes(q)) : items;
+  $("#ucsCount").textContent = `${matched.length} / ${items.length}`;
+  if (!matched.length) {
+    list.appendChild(el("div", "empty", "没有匹配的分类，试试 CatID、英文类别或中文类别。"));
+    return;
+  }
+  const current = state.ucsTarget ? String(state.ucsTarget.params.catid || "").toLowerCase() : "";
+  const frag = document.createDocumentFragment();
+  matched.forEach((c) => {
+    const btn = el("button", "ucs-item");
+    if (current && current === c[0].toLowerCase()) btn.classList.add("active");
+    btn.appendChild(el("span", "ucs-id", c[0]));
+    btn.appendChild(el("span", "ucs-zh", `${c[3]} / ${c[4]}`));
+    btn.appendChild(el("span", "ucs-en", `${c[1]} / ${c[2]}`));
+    btn.title = c[5] ? `同义词：${c[5]}` : c[0];
+    btn.addEventListener("click", () => applyUcs(c[0]));
+    frag.appendChild(btn);
+  });
+  list.appendChild(frag);
+}
+
+function applyUcs(catid) {
+  const rule = state.ucsTarget;
+  state.ucsTarget = null;
+  $("#ucsOverlay").classList.add("hidden");
+  if (!rule) return;
+  rule.params.catid = catid;
+  renderRules();
+  schedulePreview();
+}
+
+async function openGuide() {
+  try {
+    const res = await call("ucs_guide");
+    if (!res.ok) { toast(res.error || "读取 UCS 规范失败", "err"); return; }
+    state.guide = res;
+    $("#guideBody").innerHTML = renderMarkdown(res.markdown || "");
+    $("#guideMeta").textContent = `随包文件：${res.guidePath}`;
+    const modalBody = $("#guideBody").parentElement;
+    if (modalBody) modalBody.scrollTop = 0;
+    $("#guideOverlay").classList.remove("hidden");
+  } catch (err) {
+    toast("读取 UCS 规范失败：" + err.message, "err");
+  }
+}
+
+async function saveUcsDoc(kind) {
+  setBusy(true);
+  try {
+    const res = await call("save_ucs_doc", kind);
+    if (!res.ok) { toast(res.error || "另存失败", "err"); return; }
+    if (res.path) toast(`已另存到 ${res.path}`, "ok");
+  } catch (err) {
+    toast("另存失败：" + err.message, "err");
+  } finally {
+    setBusy(false);
+  }
 }
 
 /* ---------------- 模式 ---------------- */
@@ -1346,8 +1737,12 @@ $("#confirmOverlay").addEventListener("click", (e) => {
 
 document.addEventListener("keydown", (e) => {
   if (e.key === "Escape") {
-    if (!$("#pickerOverlay").classList.contains("hidden")) $("#pickerOverlay").classList.add("hidden");
-    if (!$("#confirmOverlay").classList.contains("hidden")) closeConfirm(false);
+    if (!$("#confirmOverlay").classList.contains("hidden")) { closeConfirm(false); return; }
+    ["pickerOverlay", "templateOverlay", "ucsOverlay", "guideOverlay"].forEach((id) => {
+      const node = document.getElementById(id);
+      if (node && !node.classList.contains("hidden")) node.classList.add("hidden");
+    });
+    state.ucsTarget = null;
   }
   if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) {
     if (!$("#execute").disabled) executeFlow();
@@ -1365,6 +1760,93 @@ function changeList(items, total) {
 }
 
 /* ---------------- 杂项 ---------------- */
+
+function renderMarkdown(md) {
+  const lines = String(md || "").replace(/\r\n?/g, "\n").split("\n");
+  const inline = (text) => escapeHtml(text)
+    .replace(/`([^`]+)`/g, "<code>$1</code>")
+    .replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>")
+    .replace(/\[([^\]]+)\]\((https?:\/\/[^)\s]+)\)/g, '<a href="$2" target="_blank" rel="noreferrer">$1</a>');
+  const startsBlock = (text) => /^(#{1,4}\s|>\s?|\||```|[-*]\s+|\d+\.\s+)/.test(text);
+  const out = [];
+  let i = 0;
+  while (i < lines.length) {
+    const raw = lines[i];
+    const trimmed = raw.trim();
+    if (!trimmed) { i++; continue; }
+
+    if (trimmed.startsWith("```")) {
+      const buf = [];
+      i++;
+      while (i < lines.length && !lines[i].trim().startsWith("```")) { buf.push(lines[i]); i++; }
+      i++;
+      out.push(`<pre><code>${escapeHtml(buf.join("\n"))}</code></pre>`);
+      continue;
+    }
+
+    const heading = raw.match(/^(#{1,4})\s+(.*)$/);
+    if (heading) {
+      const level = heading[1].length;
+      out.push(`<h${level}>${inline(heading[2])}</h${level}>`);
+      i++;
+      continue;
+    }
+
+    if (/^>\s?/.test(trimmed)) {
+      const buf = [];
+      while (i < lines.length && /^>\s?/.test(lines[i].trim())) {
+        buf.push(lines[i].trim().replace(/^>\s?/, ""));
+        i++;
+      }
+      out.push(`<blockquote>${inline(buf.join(" "))}</blockquote>`);
+      continue;
+    }
+
+    if (trimmed.startsWith("|")) {
+      const rows = [];
+      while (i < lines.length && lines[i].trim().startsWith("|")) { rows.push(lines[i].trim()); i++; }
+      const cells = (row) => row.replace(/^\|/, "").replace(/\|$/, "").split("|").map((c) => c.trim());
+      if (rows.length >= 2) {
+        const head = cells(rows[0]);
+        const body = rows.slice(2).map(cells);
+        out.push(
+          `<table><thead><tr>${head.map((c) => `<th>${inline(c)}</th>`).join("")}</tr></thead>` +
+          `<tbody>${body.map((r) => `<tr>${r.map((c) => `<td>${inline(c)}</td>`).join("")}</tr>`).join("")}</tbody></table>`
+        );
+      }
+      continue;
+    }
+
+    if (/^[-*]\s+/.test(trimmed)) {
+      const buf = [];
+      while (i < lines.length && /^[-*]\s+/.test(lines[i].trim())) {
+        buf.push(lines[i].trim().replace(/^[-*]\s+/, ""));
+        i++;
+      }
+      out.push(`<ul>${buf.map((x) => `<li>${inline(x)}</li>`).join("")}</ul>`);
+      continue;
+    }
+
+    if (/^\d+\.\s+/.test(trimmed)) {
+      const buf = [];
+      while (i < lines.length && /^\d+\.\s+/.test(lines[i].trim())) {
+        buf.push(lines[i].trim().replace(/^\d+\.\s+/, ""));
+        i++;
+      }
+      out.push(`<ol>${buf.map((x) => `<li>${inline(x)}</li>`).join("")}</ol>`);
+      continue;
+    }
+
+    const buf = [trimmed];
+    i++;
+    while (i < lines.length && lines[i].trim() && !startsBlock(lines[i].trim())) {
+      buf.push(lines[i].trim());
+      i++;
+    }
+    out.push(`<p>${inline(buf.join(" "))}</p>`);
+  }
+  return out.join("\n");
+}
 
 function baseName(path) {
   const s = String(path || "");
@@ -1456,6 +1938,35 @@ $("#addRule").addEventListener("click", openPicker);
 $("#pickerCancel").addEventListener("click", () => $("#pickerOverlay").classList.add("hidden"));
 $("#pickerOverlay").addEventListener("click", (e) => {
   if (e.target === $("#pickerOverlay")) $("#pickerOverlay").classList.add("hidden");
+});
+
+$("#templateBtn").addEventListener("click", openTemplates);
+$("#templateClose").addEventListener("click", () => $("#templateOverlay").classList.add("hidden"));
+$("#templateSave").addEventListener("click", saveTemplate);
+$("#templateName").addEventListener("keydown", (e) => {
+  if (e.key === "Enter") saveTemplate();
+});
+$("#templateOverlay").addEventListener("click", (e) => {
+  if (e.target === $("#templateOverlay")) $("#templateOverlay").classList.add("hidden");
+});
+
+$("#ucsSearch").addEventListener("input", () => renderUcsList($("#ucsSearch").value));
+$("#ucsCancel").addEventListener("click", () => {
+  state.ucsTarget = null;
+  $("#ucsOverlay").classList.add("hidden");
+});
+$("#ucsOverlay").addEventListener("click", (e) => {
+  if (e.target === $("#ucsOverlay")) {
+    state.ucsTarget = null;
+    $("#ucsOverlay").classList.add("hidden");
+  }
+});
+
+$("#guideClose").addEventListener("click", () => $("#guideOverlay").classList.add("hidden"));
+$("#guideSave").addEventListener("click", () => saveUcsDoc("guide"));
+$("#guideSaveTable").addEventListener("click", () => saveUcsDoc("table"));
+$("#guideOverlay").addEventListener("click", (e) => {
+  if (e.target === $("#guideOverlay")) $("#guideOverlay").classList.add("hidden");
 });
 
 $("#refresh").addEventListener("click", preview);
