@@ -32,7 +32,9 @@ def _now() -> str:
 
 
 def _new_id() -> str:
-    return datetime.now().strftime("%Y%m%d-%H%M%S") + "-" + secrets.token_hex(2)
+    # 毫秒级时间戳保证同秒内多次执行仍可按 id 字典序判断先后
+    stamp = datetime.now().strftime("%Y%m%d-%H%M%S-%f")[:-3]
+    return stamp + "-" + secrets.token_hex(2)
 
 
 def _tmp_path(path: str, tag: str) -> str:
