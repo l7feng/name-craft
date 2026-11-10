@@ -1,0 +1,23 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+build/
+dist/
+.pytest_cache/
+.ruff_cache/
+
+# 运行态（撤销日志、用户配置）不入仓
+logs/
+*.namecraft.json
+
+# 本机冒烟与截图证据
+.smoke/
+
+# 编辑器与系统
+.idea/
+.vscode/
+Thumbs.db
+Desktop.ini
