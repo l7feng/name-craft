@@ -32,7 +32,7 @@ def run() -> int:
 
     api = Bridge()
     window = webview.create_window(
-        "namecraft",
+        "Name Craft",
         str(ASSETS / "index.html"),
         js_api=api,
         width=1240,

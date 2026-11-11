@@ -1,8 +1,8 @@
-# namecraft
+# Name Craft
 
 规则链式文件批量重命名工具（Windows，Python）。参考 ReNamer 7.2 的公开行为描述做干净室（clean-room）重写：只采用行为语义与公开文档示例作为测试基准，不含任何 ReNamer 代码、脚本或资源。
 
-- 产品名与仓名 `namecraft` 为人类 2026-11-09 赐名；项目记录在个人知识库 `5-领域-A/06-软件制作/89-文件批量重命名工具/`。
+- 产品名 Name Craft；仓库与源码目录名 `name-craft`；Python 包名与运行目录仍为 `namecraft`（2026-11-11 统一命名）。项目记录在个人知识库 `5-领域-A/06-软件制作/89-文件批量重命名工具/`。
 - 当前版本 0.3.0：13 规则引擎（含 UCS 8.2.1 命名）、自定义规则模板、CLI 预览、pywebview 桌面界面、文件拖拽区、确认式覆盖、执行日志与撤销、PyInstaller 打包。
 - 与既有 `rename-unify` 仓相互独立、互不引用。
 
@@ -58,7 +58,7 @@ namecraft undo                                 # S3：撤销最近一次已完�
 .venv/Scripts/python -m PyInstaller packaging/namecraft-onefile.spec --noconfirm --clean
 ```
 
-产物 `dist/namecraft/`（windowed onedir；exe 与 `_internal/` 同级）与 `dist/namecraft-onefile.exe`（windowed onefile，单文件可直接双击，启动时解压到临时目录，稍慢）。图标由 `packaging/make_icon.py` 程序化生成（渐变圆角底 + 字母标记，16/20/24 用单字 N，更大尺寸用 nc），PyInstaller 将 `namecraft.ico` 写入 exe 资源；窗口标题栏与任务栏沿用该 exe 图标。交付包落 `D:/Ai-Files/Tools/Exe/11-批量重命名工具/namecraft-v0.3.0/`，含 README、`docs/`（UCS 规范与分类表）与 `SHA256SUMS.txt`；面向桌面的单文件版可直接取 `dist/namecraft-onefile.exe`。
+产物 `dist/Name Craft/`（windowed onedir；`Name Craft.exe` 与 `_internal/` 同级）与 `dist/Name Craft.exe`（windowed onefile，单文件可直接双击，启动时解压到临时目录，稍慢）。图标由 `packaging/make_icon.py` 程序化生成（渐变圆角底 + 字母标记，16/20/24 用单字 N，更大尺寸用 nc），PyInstaller 将 `namecraft.ico` 写入 exe 资源；窗口标题栏与任务栏沿用该 exe 图标。交付包落 `D:/Ai-Files/Tools/Exe/11-Name Craft（规则链批量重命名）/name-craft-v0.3.0/`，含 README、`docs/`（UCS 规范与分类表）与 `SHA256SUMS.txt`；面向桌面的单文件版可直接取 `dist/Name Craft.exe`。
 
 ## 安全口径
 

@@ -5,7 +5,7 @@
 
     .venv/Scripts/python.exe -m PyInstaller packaging/namecraft.spec --noconfirm --clean
 
-产物 `dist/namecraft/`：`namecraft.exe` 与 `_internal/` 同级。
+产物 `dist/Name Craft/`：`Name Craft.exe` 与 `_internal/` 同级。
 """
 
 from pathlib import Path
@@ -40,7 +40,7 @@ exe = EXE(
     a.scripts,
     [],
     exclude_binaries=True,
-    name="namecraft",
+    name="Name Craft",
     debug=False,
     bootloader_ignore_signals=False,
     strip=False,
@@ -60,5 +60,5 @@ coll = COLLECT(
     a.datas,
     strip=False,
     upx=False,
-    name="namecraft",
+    name="Name Craft",
 )

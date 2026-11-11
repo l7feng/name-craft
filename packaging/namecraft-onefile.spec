@@ -5,7 +5,7 @@
 
     .venv/Scripts/python.exe -m PyInstaller packaging/namecraft-onefile.spec --noconfirm --clean
 
-产物 `dist/namecraft-onefile.exe`：单文件，无需 `_internal/`。
+产物 `dist/Name Craft.exe`：单文件，无需 `_internal/`。
 """
 
 from pathlib import Path
@@ -41,7 +41,7 @@ exe = EXE(
     a.binaries,
     a.datas,
     [],
-    name="namecraft-onefile",
+    name="Name Craft",
     debug=False,
     bootloader_ignore_signals=False,
     strip=False,

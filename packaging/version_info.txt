@@ -16,11 +16,11 @@ VSVersionInfo(
         StringTable(
           '080404B0',
           [StringStruct('CompanyName', '32112'),
-           StringStruct('FileDescription', 'namecraft 规则链批量文件重命名'),
+           StringStruct('FileDescription', 'Name Craft 规则链批量文件重命名'),
            StringStruct('FileVersion', '0.3.0'),
            StringStruct('InternalName', 'namecraft'),
-           StringStruct('OriginalFilename', 'namecraft.exe'),
-           StringStruct('ProductName', 'namecraft'),
+           StringStruct('OriginalFilename', 'Name Craft.exe'),
+           StringStruct('ProductName', 'Name Craft'),
            StringStruct('ProductVersion', '0.3.0')])
       ]
     ),
