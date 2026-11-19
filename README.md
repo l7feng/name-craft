@@ -53,12 +53,12 @@ namecraft undo                                 # S3：撤销最近一次已完�
 
 ```bash
 .venv/Scripts/pip install pyinstaller
-.venv/Scripts/python packaging/make_icon.py           # 重新生成 packaging/namecraft.ico
+.venv/Scripts/python packaging/make_icon.py           # 重新生成 assets/icons/app.ico
 .venv/Scripts/python -m PyInstaller packaging/namecraft.spec --noconfirm --clean
 .venv/Scripts/python -m PyInstaller packaging/namecraft-onefile.spec --noconfirm --clean
 ```
 
-产物 `dist/Name Craft/`（windowed onedir；`Name Craft.exe` 与 `_internal/` 同级）与 `dist/Name Craft.exe`（windowed onefile，单文件可直接双击，启动时解压到临时目录，稍慢）。图标由 `packaging/make_icon.py` 程序化生成（渐变圆角底 + 字母标记，16/20/24 用单字 N，更大尺寸用 nc），PyInstaller 将 `namecraft.ico` 写入 exe 资源；窗口标题栏与任务栏沿用该 exe 图标。交付包落 `D:/Ai-Files/Tools/Exe/11-Name Craft（规则链批量重命名）/name-craft-v0.3.0/`，含 README、`docs/`（UCS 规范与分类表）与 `SHA256SUMS.txt`；面向桌面的单文件版可直接取 `dist/Name Craft.exe`。
+产物 `dist/Name Craft/`（windowed onedir；`Name Craft.exe` 与 `_internal/` 同级）与 `dist/Name Craft.exe`（windowed onefile，单文件可直接双击，启动时解压到临时目录，稍慢）。图标由 `packaging/make_icon.py` 程序化生成（渐变圆角底 + 字母标记，16/20/24 用单字 N，更大尺寸用 nc），PyInstaller 将 `assets/icons/app.ico` 写入 exe 资源；窗口标题栏与任务栏沿用该 exe 图标。交付包落 `D:/Ai-Files/Tools/Exe/11-Name Craft（规则链批量重命名）/name-craft-v0.3.0/`，含 README、`docs/`（UCS 规范与分类表）与 `SHA256SUMS.txt`；面向桌面的单文件版可直接取 `dist/Name Craft.exe`。
 
 ## 安全口径
 

@@ -16,6 +16,7 @@ from pathlib import Path
 from PIL import Image, ImageDraw, ImageFilter, ImageFont
 
 HERE = Path(__file__).resolve().parent
+ICONS = HERE.parent / "assets" / "icons"
 FONT_BOLD = Path("C:/Windows/Fonts/segoeuib.ttf")
 SIZES = (16, 20, 24, 32, 40, 48, 64, 128, 256)
 MASTER = 1024
@@ -163,11 +164,11 @@ def main() -> int:
     args = parser.parse_args()
 
     images = [(s, render(s)) for s in SIZES]
-    write_ico(HERE / "namecraft.ico", images)
-    images[-1][1].save(HERE / "namecraft-256.png", optimize=True)
+    write_ico(ICONS / "app.ico", images)
+    images[-1][1].save(ICONS / "app-256.png", optimize=True)
     if args.preview:
         contact_sheet(images).save(args.preview, optimize=True)
-    print("wrote", HERE / "namecraft.ico", "and", HERE / "namecraft-256.png")
+    print("wrote", ICONS / "app.ico", "and", ICONS / "app-256.png")
     return 0
 
 

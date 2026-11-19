@@ -16,8 +16,11 @@ DEFAULTS = {
     "folder": "",
     "rules": [],
     "mode": "block",
+    "theme": "graphite",
     "lastFolders": {},
 }
+
+THEMES = ("graphite", "paper", "bpm")
 
 
 def _clean(data) -> dict:
@@ -26,6 +29,8 @@ def _clean(data) -> dict:
     result = dict(DEFAULTS)
     result["folder"] = str(data.get("folder", "") or "")
     result["mode"] = str(data.get("mode", "block") or "block")
+    theme = str(data.get("theme", "graphite") or "graphite")
+    result["theme"] = theme if theme in THEMES else "graphite"
     rules = data.get("rules")
     result["rules"] = rules if isinstance(rules, list) else []
     folders = data.get("lastFolders")
